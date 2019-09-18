@@ -128,6 +128,8 @@ subscription_link_service(th_subscription_t *s, service_t *t)
     streaming_target_deliver(s->ths_output, sm);
   }
 
+  subscription_set_cpu_governor();
+
   pthread_mutex_unlock(&t->s_stream_mutex);
 }
 
@@ -165,6 +167,9 @@ subscription_unlink_service0(th_subscription_t *s, int reason, int resched)
 stop:
   if(resched || LIST_FIRST(&t->s_subscriptions) == NULL)
     service_stop(t);
+
+  subscription_set_cpu_governor();
+
   return 1;
 }
 
@@ -1312,4 +1317,24 @@ subscription_dummy_join(const char *id, int first)
   s = subscription_create_from_service(prch, NULL, 1, "dummy", 0, NULL, NULL, "dummy", NULL);
 
   tvhnotice(LS_SUBSCRIPTION, "%04X: Dummy join %s ok", shortid(s), id);
+}
+
+void subscription_set_cpu_governor(void)
+{
+  // set CPU governor depending on whether subscriptions are active
+  const char *governor = subscriptions_active() ? "performance" : "powersave";
+
+  FILE * fp;
+  char sysfile[54];
+  int i;
+
+  // attempt to set the governor for cpu0-3
+  for (i=0; i<=3; i++) {
+    sprintf(sysfile, "/sys/devices/system/cpu/cpu%d/cpufreq/scaling_governor", i);
+    fp = fopen(sysfile, "w");
+    if (fp) {
+      fprintf(fp, "%s", governor);
+      fclose(fp);
+    }
+  }
 }
