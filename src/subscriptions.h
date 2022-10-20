@@ -239,4 +239,6 @@ static inline int subscriptions_active(void)
 struct htsmsg;
 struct htsmsg *subscription_create_msg(th_subscription_t *s, const char *lang);
 
+void subscription_change_custom_cmd(void);
+
 #endif /* SUBSCRIPTIONS_H */

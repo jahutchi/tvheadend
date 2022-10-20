@@ -29,6 +29,7 @@
 #include "input.h"
 #include "intlconv.h"
 #include "dbus.h"
+#include "spawn.h"
 
 struct th_subscription_list subscriptions;
 struct th_subscription_list subscriptions_remove;
@@ -162,6 +163,7 @@ subscription_unlink_service0(th_subscription_t *s, int reason, int resched)
 stop:
   if(resched || LIST_FIRST(&t->s_subscriptions) == NULL)
     service_stop(t);
+
   return 1;
 }
 
@@ -677,7 +679,7 @@ subscription_destroy(th_subscription_t *s)
   free(s->ths_client);
   free(s->ths_dvrfile);
   free(s);
-
+  subscription_change_custom_cmd();
 }
 
 void
@@ -818,6 +820,8 @@ subscription_create
 
   subscription_delayed_reschedule(0);
   notify_reload("subscriptions");
+
+  subscription_change_custom_cmd();
 
   return s;
 }
@@ -1324,4 +1328,16 @@ subscription_dummy_join(const char *id, int first)
   s = subscription_create_from_service(prch, NULL, 1, "dummy", 0, NULL, NULL, "dummy", NULL);
 
   tvhnotice(LS_SUBSCRIPTION, "%04X: Dummy join %s ok", shortid(s), id);
+}
+
+void subscription_change_custom_cmd(void)
+{
+  // run a custom script when a subscription has started/ended
+  const char *subs_active = subscriptions_active() ? "y" : "n";
+  const char *args[] = {
+    "/opt/scripts/tvh-subscription-change.sh",
+    subs_active, NULL
+  };
+  pid_t pid;
+  spawnv(args[0], (void *)args, &pid, 1, 1);
 }
