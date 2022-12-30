@@ -1544,9 +1544,9 @@ mpegts_input_process
           if (type & MPS_FTABLE)
             mpegts_input_table_dispatch(mm, mm->mm_nicename, tsb, llen, 1);
           if (type & MPS_TABLE) {
-            if (mi->mi_table_queue_size >= 2*1024*1024) {
+            if (mi->mi_table_queue_size >= 8*1024*1024) {
               if (tvhlog_limit(&mi->mi_input_queue_loglimit, 10)) {
-                tvhwarn(LS_MPEGTS, "too much queued table input data (over 2MB) for %s, discarding new", mi->mi_name);
+                tvhwarn(LS_MPEGTS, "too much queued table input data (over 8MB) for %s, discarding new", mi->mi_name);
                 if (tvhtrace_enabled())
                   mpegts_input_analyze_table_queue(mi);
               }
