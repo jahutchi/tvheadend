@@ -203,7 +203,7 @@ const idclass_t linuxdvb_frontend_class =
       .id       = "status_period",
       .name     = N_("Status period (ms)"),
       .desc     = N_("By default, linuxdvb's status read period is "
-                     "1000ms (one second). The accepted range is 250ms "
+                     "1000ms (one second). The accepted range is 10ms "
                      "to 8000ms. Note that for some hardware or drivers "
                      "(like USB), the status operations take too much "
                      "time and CPU. In this case, increase the default "
@@ -887,7 +887,7 @@ linuxdvb_frontend_monitor ( void *aux )
   streaming_message_t sm;
   service_t *s;
   int logit = 0, retune, e;
-  uint32_t period = MINMAX(lfe->lfe_status_period, 250, 8000);
+  uint32_t period = MINMAX(lfe->lfe_status_period, 10, 8000);
 #if DVB_VER_ATLEAST(5,10)
   struct dtv_property fe_properties[6];
   struct dtv_properties dtv_prop;
