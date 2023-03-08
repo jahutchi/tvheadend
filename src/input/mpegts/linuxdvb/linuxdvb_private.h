@@ -129,7 +129,6 @@ struct linuxdvb_frontend
   int                       lfe_in_setup;
   int                       lfe_locked;
   int                       lfe_status;
-  int                       lfe_status2;
   int                       lfe_ioctls;
   int                       lfe_nodata;
   int                       lfe_freq;

@@ -690,7 +690,6 @@ linuxdvb_frontend_stop_mux
   lfe->lfe_ready   = 0;
   lfe->lfe_locked  = 0;
   lfe->lfe_status  = 0;
-  lfe->lfe_status2 = 0;
 
   /* Ensure it won't happen immediately */
   mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, sec2mono(2));
@@ -708,7 +707,6 @@ linuxdvb_frontend_stop_mux
         lfe2->lfe_ready   = 0;
         lfe2->lfe_locked  = 0;
         lfe2->lfe_status  = 0;
-        lfe2->lfe_status2 = 0;
         /* Ensure it won't happen immediately */
         mtimer_arm_rel(&lfe2->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, sec2mono(2));
         if (lfe2->lfe_satconf)
@@ -882,11 +880,11 @@ linuxdvb_frontend_monitor ( void *aux )
   mpegts_mux_instance_t *mmi = LIST_FIRST(&lfe->mi_mux_active);
   mpegts_mux_t *mm;
   fe_status_t fe_status;
-  signal_state_t status;
+  signal_state_t status = SIGNAL_UNKNOWN;
   signal_status_t sigstat;
   streaming_message_t sm;
   service_t *s;
-  int logit = 0, retune, e;
+  int logit = 0, e;
   uint32_t period = MINMAX(lfe->lfe_status_period, 250, 8000);
 #if DVB_VER_ATLEAST(5,10)
   struct dtv_property fe_properties[6];
@@ -927,43 +925,11 @@ linuxdvb_frontend_monitor ( void *aux )
   /* re-arm */
   mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, ms2mono(period));
 
-  /* Get current status */
-  if (ioctl(lfe->lfe_fe_fd, FE_READ_STATUS, &fe_status) == -1) {
-    tvhwarn(LS_LINUXDVB, "%s - FE_READ_STATUS error %s", buf, strerror(errno));
-    /* TODO: check error value */
-    return;
-
-  } else if (fe_status & FE_HAS_LOCK)
-    status = SIGNAL_GOOD;
-  else if (fe_status & (FE_HAS_SYNC | FE_HAS_VITERBI | FE_HAS_CARRIER))
-    status = SIGNAL_BAD;
-  else if (fe_status & FE_HAS_SIGNAL)
-    status = SIGNAL_FAINT;
-  else
-    status = SIGNAL_NONE;
-
-  /* Set default period */
-  if (fe_status != lfe->lfe_status) {
-    tvhdebug(LS_LINUXDVB, "%s - status %7s (%s%s%s%s%s%s)", buf,
-             signal2str(status),
-             (fe_status & FE_HAS_SIGNAL) ?  "SIGNAL"  : "",
-             (fe_status & FE_HAS_CARRIER) ? " | CARRIER" : "",
-             (fe_status & FE_HAS_VITERBI) ? " | VITERBI" : "",
-             (fe_status & FE_HAS_SYNC) ?    " | SYNC"    : "",
-             (fe_status & FE_HAS_LOCK) ?    " | LOCK"  : "",
-             (fe_status & FE_TIMEDOUT) ?    "TIMEOUT" : "");
-  } else {
-    tvhtrace(LS_LINUXDVB, "%s - status %d (%04X)", buf, status, fe_status);
-  }
-  retune = NOSIGNAL(fe_status) && NOSIGNAL(lfe->lfe_status) && !NOSIGNAL(lfe->lfe_status2);
-  lfe->lfe_status2 = lfe->lfe_status;
-  lfe->lfe_status = fe_status;
-
   /* Retune check - we lost signal or no data were received */
-  if (retune || lfe->lfe_nodata) {
+  if (lfe->lfe_nodata) {
     lfe->lfe_nodata = 0;
     if (lfe->lfe_locked && lfe->lfe_freq > 0) {
-      tvhwarn(LS_LINUXDVB, "%s - %s", buf, retune ? "retune" : "retune nodata");
+      tvhwarn(LS_LINUXDVB, "%s - retune nodata", buf);
       linuxdvb_frontend_tune0(lfe, mmi, lfe->lfe_freq);
       mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, ms2mono(50));
       lfe->lfe_locked = 1;
@@ -975,6 +941,39 @@ linuxdvb_frontend_monitor ( void *aux )
 
   /* Waiting for lock */
   if (!lfe->lfe_locked) {
+
+    /* Get current status */
+    tvh_mutex_lock(&mmi->tii_stats_mutex);
+    if (ioctl(lfe->lfe_fe_fd, FE_READ_STATUS, &fe_status) == -1) {
+      tvh_mutex_unlock(&mmi->tii_stats_mutex);
+      tvhwarn(LS_LINUXDVB, "%s - FE_READ_STATUS error %s", buf, strerror(errno));
+      /* TODO: check error value */
+      return;
+
+    } else if (fe_status & FE_HAS_LOCK)
+      status = SIGNAL_GOOD;
+    else if (fe_status & (FE_HAS_SYNC | FE_HAS_VITERBI | FE_HAS_CARRIER))
+      status = SIGNAL_BAD;
+    else if (fe_status & FE_HAS_SIGNAL)
+      status = SIGNAL_FAINT;
+    else
+      status = SIGNAL_NONE;
+
+    tvh_mutex_unlock(&mmi->tii_stats_mutex);
+    /* Set default period */
+    if (fe_status != lfe->lfe_status) {
+      tvhdebug(LS_LINUXDVB, "%s - status %7s (%s%s%s%s%s%s)", buf,
+               signal2str(status),
+               (fe_status & FE_HAS_SIGNAL) ?  "SIGNAL"  : "",
+               (fe_status & FE_HAS_CARRIER) ? " | CARRIER" : "",
+               (fe_status & FE_HAS_VITERBI) ? " | VITERBI" : "",
+               (fe_status & FE_HAS_SYNC) ?    " | SYNC"    : "",
+               (fe_status & FE_HAS_LOCK) ?    " | LOCK"  : "",
+               (fe_status & FE_TIMEDOUT) ?    "TIMEOUT" : "");
+    } else {
+      tvhtrace(LS_LINUXDVB, "%s - status %d (%04X)", buf, status, fe_status);
+    }
+    lfe->lfe_status = fe_status;
 
     /* Locked */
     if (status == SIGNAL_GOOD) {
@@ -1007,6 +1006,7 @@ linuxdvb_frontend_monitor ( void *aux )
         return;
       lfe->lfe_monitor = mclk() + sec2mono(1);
     }
+  /* We already have a lock */
   } else {
     if (mclk() < lfe->lfe_monitor)
       return;
@@ -1541,7 +1541,6 @@ linuxdvb_frontend_clear
 
   lfe->lfe_locked  = 0;
   lfe->lfe_status  = 0;
-  lfe->lfe_status2 = 0;
 
 #if DVB_API_VERSION >= 5
   static struct dtv_property clear_p[] = {
