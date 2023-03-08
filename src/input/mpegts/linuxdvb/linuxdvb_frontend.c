@@ -941,7 +941,7 @@ linuxdvb_frontend_monitor ( void *aux )
 
   /* Waiting for lock */
   if (!lfe->lfe_locked) {
-
+    tvhdebug(LS_LINUXDVB, "%s - checking signal status", buf);
     /* Get current status */
     tvh_mutex_lock(&mmi->tii_stats_mutex);
     if (ioctl(lfe->lfe_fe_fd, FE_READ_STATUS, &fe_status) == -1) {
@@ -991,25 +991,32 @@ linuxdvb_frontend_monitor ( void *aux )
           break;
       } while (ERRNO_AGAIN(e));
       tvh_mutex_unlock(&lfe->lfe_dvr_lock);
-
+      tvhdebug(LS_LINUXDVB, "%s - input started", buf);
       /* Table handlers */
       psi_tables_install((mpegts_input_t *)lfe, mm,
                          ((dvb_mux_t *)mm)->lm_tuning.dmc_fe_delsys);
-
+      tvhdebug(LS_LINUXDVB, "%s - psi tables installed", buf);
     /* Re-arm (quick) */
     } else {
+      tvhdebug(LS_LINUXDVB, "%s - still waiting for a lock", buf);
       mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor,
                      lfe, ms2mono(50));
 
       /* Monitor 1 per sec */
-      if (mclk() < lfe->lfe_monitor)
+      if (mclk() < lfe->lfe_monitor) {
+        tvhdebug(LS_LINUXDVB, "%s - lfe_monitor is greater than clock", buf);
         return;
+      }
+      tvhdebug(LS_LINUXDVB, "%s - setting lfe_monitor 1 second ahead of current clock", buf);
       lfe->lfe_monitor = mclk() + sec2mono(1);
     }
   /* We already have a lock */
   } else {
-    if (mclk() < lfe->lfe_monitor)
+    tvhdebug(LS_LINUXDVB, "%s - existing lock", buf);
+    if (mclk() < lfe->lfe_monitor) {
+      tvhdebug(LS_LINUXDVB, "%s - lfe_monitor less than clock", buf);
       return;
+    }
     lfe->lfe_monitor = mclk() + ms2mono(period);
   }
 
@@ -1049,6 +1056,7 @@ linuxdvb_frontend_monitor ( void *aux )
   }
 
   if(gotprop) {
+    tvhdebug(LS_LINUXDVB, "%s - gathering stats from v5 API", buf);
     /* Signal strength */
     if(ioctl_check(lfe, 1) && fe_properties[0].u.st.len > 0) {
       if(fe_properties[0].u.st.stat[0].scale == FE_SCALE_RELATIVE) {
@@ -1144,6 +1152,7 @@ linuxdvb_frontend_monitor ( void *aux )
   } else
 #endif
   {
+    tvhdebug(LS_LINUXDVB, "%s - gathering stats from old API", buf);
     ioctl_bad(lfe, 0);
     if (ioctl_check(lfe, 1) && !ioctl(lfe->lfe_fe_fd, FE_READ_SIGNAL_STRENGTH, &u16)) {
       mmi->tii_stats.signal_scale = SIGNAL_STATUS_SCALE_RELATIVE;
@@ -1180,7 +1189,7 @@ linuxdvb_frontend_monitor ( void *aux )
         tvhwarn(LS_LINUXDVB, "Unable to provide UNC value.");
     }
   }
-
+  tvhdebug(LS_LINUXDVB, "%s - finished gathering stats", buf);
   /* Send message */
   sigstat.status_text  = signal2str(status);
   sigstat.snr          = mmi->tii_stats.snr;
@@ -1196,7 +1205,7 @@ linuxdvb_frontend_monitor ( void *aux )
   memset(&sm, 0, sizeof(sm));
   sm.sm_type = SMT_SIGNAL_STATUS;
   sm.sm_data = &sigstat;
-
+  tvhdebug(LS_LINUXDVB, "%s - finished setting sm_data", buf);
   tvh_mutex_unlock(&mmi->tii_stats_mutex);
 
   LIST_FOREACH(s, &mmi->mmi_mux->mm_transports, s_active_link) {
@@ -1204,6 +1213,7 @@ linuxdvb_frontend_monitor ( void *aux )
     streaming_service_deliver(s, streaming_msg_clone(&sm));
     tvh_mutex_unlock(&s->s_stream_mutex);
   }
+  tvhdebug(LS_LINUXDVB, "%s - finished streaming_service_deliver", buf);
 }
 
 typedef struct linuxdvb_pid {
