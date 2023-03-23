@@ -126,6 +126,7 @@ struct linuxdvb_frontend
    */
   int                       lfe_refcount;
   int                       lfe_ready;
+  int                       lfe_degraded;
   int                       lfe_in_setup;
   int                       lfe_locked;
   int                       lfe_status;
@@ -426,6 +427,8 @@ linuxdvb_frontend_create
 void linuxdvb_frontend_save ( linuxdvb_frontend_t *lfe, htsmsg_t *m );
 
 void linuxdvb_frontend_destroy ( linuxdvb_frontend_t *lfe );
+
+void linuxdvb_frontend_degraded_notification ( linuxdvb_frontend_t *lfe );
 
 void linuxdvb_frontend_add_network
   ( linuxdvb_frontend_t *lfe, linuxdvb_network_t *net );
