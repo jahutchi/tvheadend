@@ -1842,6 +1842,8 @@ linuxdvb_diseqc_send
 int
 linuxdvb_diseqc_set_volt ( linuxdvb_satconf_t *ls, int vol )
 {
+  linuxdvb_frontend_t *lfe = (linuxdvb_frontend_t*)ls->ls_frontend;
+
   vol = vol < 0 ? -1 : !!(vol > 0);
   /* Already set ? */
   if (vol >= 0 && ls->ls_last_vol == vol + 1)
@@ -1859,6 +1861,7 @@ linuxdvb_diseqc_set_volt ( linuxdvb_satconf_t *ls, int vol )
             vol ? (vol < 0 ? SEC_VOLTAGE_OFF : SEC_VOLTAGE_18) : SEC_VOLTAGE_13)) {
     tvherror(LS_DISEQC, "failed to set voltage (e=%s)", strerror(errno));
     ls->ls_last_vol = 0;
+    lfe->lfe_degraded = 1;
     return -1;
   }
   if (vol >= 0)
