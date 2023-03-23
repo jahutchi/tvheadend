@@ -23,6 +23,7 @@
 #include "atomic.h"
 #include "tvhpoll.h"
 #include "streaming.h"
+#include "spawn.h"
 
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -511,6 +512,16 @@ linuxdvb_frontend_close_fd ( linuxdvb_frontend_t *lfe, const char *name )
   lfe->lfe_fe_fd = -1;
   if (lfe->lfe_satconf)
     linuxdvb_satconf_reset(lfe->lfe_satconf);
+
+  if (lfe->lfe_degraded) {
+    if (lfe->mi_enabled) {
+      tvhwarn(LS_LINUXDVB, "%s - disabling degraded adapter", name);
+      mpegts_input_set_enabled((mpegts_input_t *)lfe, 0);
+      linuxdvb_adapter_changed(lfe->lfe_adapter);
+      linuxdvb_frontend_degraded_notification(lfe);
+    }
+    lfe->lfe_degraded = 0;
+  }
 }
 
 static int
@@ -540,6 +551,9 @@ linuxdvb_frontend_open_fd ( linuxdvb_frontend_t *lfe, const char *name )
 
   tvhtrace(LS_LINUXDVB, "%s - opening FE %s (%d)%s",
            name, lfe->lfe_fe_path, lfe->lfe_fe_fd, extra);
+
+  if (lfe->lfe_fe_fd > 0)
+    lfe->lfe_degraded = 0;
 
   return lfe->lfe_fe_fd <= 0;
 }
@@ -758,6 +772,7 @@ linuxdvb_frontend_start_mux
 {
   linuxdvb_frontend_t *lfe = (linuxdvb_frontend_t*)mi, *lfe2;
   int res, f;
+  char lfe_name[256];
 
   assert(lfe->lfe_in_setup == 0);
 
@@ -796,6 +811,11 @@ end:
   if (res) {
     lfe->lfe_in_setup = 0;
     lfe->lfe_refcount--;
+    if (lfe->lfe_degraded && !lfe->lfe_refcount) {
+      lfe->mi_display_name((mpegts_input_t*)lfe, lfe_name, sizeof(lfe_name));
+      tvhwarn(LS_LINUXDVB, "%s - degraded adapter found following tune", lfe_name);
+      linuxdvb_frontend_close_fd(lfe, lfe_name);
+    }
   }
   return res;
 }
@@ -896,20 +916,33 @@ linuxdvb_frontend_monitor ( void *aux )
 
   lfe->mi_display_name((mpegts_input_t*)lfe, buf, sizeof(buf));
   tvhtrace(LS_LINUXDVB, "%s - checking FE status%s", buf, lfe->lfe_ready ? " (ready)" : "");
-  
+
   /* Disabled */
   if (!lfe->mi_enabled && mmi)
     mmi->mmi_mux->mm_stop(mmi->mmi_mux, 1, SM_CODE_ABORTED);
 
+  /* Degraded with either no lock or no data */
+  if (lfe->lfe_degraded && mmi && (!lfe->lfe_locked || lfe->lfe_nodata)) {
+    tvhwarn(LS_LINUXDVB, "%s - aborting degraded mux (no %s)", buf, lfe->lfe_nodata ? "data" : "signal");
+    mmi->mmi_mux->mm_stop(mmi->mmi_mux, 1, SM_CODE_ABORTED);
+  }
+
   /* Close FE */
-  if (lfe->lfe_fe_fd > 0 && !lfe->lfe_refcount && lfe->lfe_powersave) {
-    if (lfe->lfe_satconf && linuxdvb_satconf_power_save(lfe->lfe_satconf) > 0) {
-      /* re-arm */
-      mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, sec2mono(1));
+  if (lfe->lfe_fe_fd > 0 && !lfe->lfe_refcount) {
+    if (lfe->lfe_degraded) {
+      tvhwarn(LS_LINUXDVB, "%s - forcing close on degraded adapter", buf);
+      linuxdvb_frontend_close_fd(lfe, buf);
       return;
     }
-    linuxdvb_frontend_close_fd(lfe, buf);
-    return;
+    if (lfe->lfe_powersave) {
+      if (lfe->lfe_satconf && linuxdvb_satconf_power_save(lfe->lfe_satconf) > 0) {
+        /* re-arm */
+        mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, sec2mono(1));
+        return;
+      }
+      linuxdvb_frontend_close_fd(lfe, buf);
+      return;
+    }
   }
 
   /* Check accessibility */
@@ -927,12 +960,16 @@ linuxdvb_frontend_monitor ( void *aux )
   /* re-arm */
   mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, ms2mono(period));
 
+  if (lfe->lfe_degraded) {
+    tvhtrace(LS_LINUXDVB, "%s - adapter degraded, skipping signal status check", buf);
+    return;
+  }
+
   /* Get current status */
   if (ioctl(lfe->lfe_fe_fd, FE_READ_STATUS, &fe_status) == -1) {
+    lfe->lfe_degraded = 1;
     tvhwarn(LS_LINUXDVB, "%s - FE_READ_STATUS error %s", buf, strerror(errno));
-    /* TODO: check error value */
     return;
-
   } else if (fe_status & FE_HAS_LOCK)
     status = SIGNAL_GOOD;
   else if (fe_status & (FE_HAS_SYNC | FE_HAS_VITERBI | FE_HAS_CARRIER))
@@ -2303,6 +2340,23 @@ linuxdvb_frontend_destroy ( linuxdvb_frontend_t *lfe )
   free(name);
 }
 
+void
+linuxdvb_frontend_degraded_notification ( linuxdvb_frontend_t *lfe )
+{ // run a custom script to recover degraded adapter
+  char lfe_name[256];
+  char lfe_uuid[UUID_HEX_SIZE];
+
+  lfe->mi_display_name((mpegts_input_t*)lfe, lfe_name, sizeof(lfe_name));
+  idnode_uuid_as_str(&lfe->ti_id, lfe_uuid);
+
+  const char *args[] = {
+    "/opt/scripts/tvh-recover-adapter.sh",
+    lfe_name, lfe->lfe_sysfs,
+    lfe_uuid, NULL
+  };
+  pid_t pid;
+  spawnv(args[0], (void *)args, &pid, 1, 1);
+}
 /******************************************************************************
  * Editor Configuration
  *
