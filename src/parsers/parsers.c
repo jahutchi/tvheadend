@@ -130,12 +130,12 @@ parser_deliver(parser_t *t, parser_es_t *st, th_pkt_t *pkt)
 
   if (d > diff || d == PTS_UNSET) {
     if (d != PTS_UNSET && tvhlog_limit(&st->es_pcr_log, 2))
-      tvhwarn(LS_PARSER, "%s: DTS and PCR diff is very big (%"PRId64")",
+      tvhdebug(LS_PARSER, "%s: DTS and PCR diff is very big (%"PRId64")",
               st->es_nicename, pts_diff(pkt->pkt_pcr, pkt->pkt_pts));
-    pkt_trace(LS_PARSER, pkt, "pcr drop");
+    /* pkt_trace(LS_PARSER, pkt, "pcr drop");
     pkt_ref_dec(pkt);
     pkt = parser_error_packet(t, st, 1);
-    goto deliver;
+    goto deliver; */
   }
 
 deliver:
