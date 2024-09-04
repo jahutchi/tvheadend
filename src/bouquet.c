@@ -184,8 +184,10 @@ bouquet_destroy_by_service(service_t *t, int delconf)
   lock_assert(&global_lock);
 
   RB_FOREACH(bq, &bouquets, bq_link)
-    if (idnode_set_exists(bq->bq_services, &t->s_id))
+    if (idnode_set_exists(bq->bq_services, &t->s_id)) {
+      tvhinfo(LS_BOUQUET, "bouquet_remove_service call 1");
       bouquet_remove_service(bq, t, delconf);
+    }
   while ((sl = LIST_FIRST(&t->s_lcns)) != NULL) {
     LIST_REMOVE(sl, sl_link);
     free(sl);
@@ -436,6 +438,7 @@ bouquet_global_rescan_cb(void *unused)
   for (z = 0; z < global_bq->bq_services->is_count; z++) {
     s = (service_t *)global_bq->bq_services->is_array[z];
     if (!idnode_set_exists(active_svcs, &s->s_id)) {
+        tvhinfo(LS_BOUQUET, "bouquet_remove_service call 2");
         bouquet_remove_service(global_bq, s, 1);
     }
   }
@@ -564,8 +567,10 @@ bouquet_notify_service_enabled(service_t *t)
 
   RB_FOREACH(bq, &bouquets, bq_link)
     if (idnode_set_exists(bq->bq_services, &t->s_id)) {
-      if (!t->s_enabled)
+      if (!t->s_enabled) {
+        tvhinfo(LS_BOUQUET, "unmap channel call 1");
         bouquet_unmap_channel(bq, t);
+      }
       else if (bq->bq_enabled && bq->bq_maptoch)
         bouquet_map_channel(bq, t);
     }
@@ -581,8 +586,10 @@ bouquet_remove_service(bouquet_t *bq, service_t *s, int delconf)
   tvhtrace(LS_BOUQUET, "remove service %s from %s",
            s->s_nicename, bq->bq_name ?: "<unknown>");
   idnode_set_remove(bq->bq_services, &s->s_id);
-  if (delconf)
+  if (delconf) {
+    tvhinfo(LS_BOUQUET, "unmap channel call 2");
     bouquet_unmap_channel(bq, s);
+  }
   /* Also schedule global bouquet to check which services should be
    * available.
    */
@@ -667,6 +674,7 @@ bouquet_map_to_channels(bouquet_t *bq)
     if (bq->bq_enabled && bq->bq_maptoch) {
       bouquet_map_channel(bq, t);
     } else {
+      tvhinfo(LS_BOUQUET, "unmap channel call 3");
       bouquet_unmap_channel(bq, t);
     }
   }
@@ -983,14 +991,19 @@ bouquet_class_mapopt_notify ( void *obj, const char *lang )
   if (bq->bq_enabled && bq->bq_maptoch) {
     for (z = 0; z < bq->bq_services->is_count; z++) {
       t = (service_t *)bq->bq_services->is_array[z];
-      if (!bq->bq_mapradio && service_is_radio(t))
+      if (!bq->bq_mapradio && service_is_radio(t)) {
+        tvhinfo(LS_BOUQUET, "unmap channel call 4");
         bouquet_unmap_channel(bq, t);
-      else if (!bq->bq_mapnoname && noname(service_get_channel_name(t)))
+      } else if (!bq->bq_mapnoname && noname(service_get_channel_name(t))) {
+        tvhinfo(LS_BOUQUET, "unmap channel call 5");
         bouquet_unmap_channel(bq, t);
-      else if (!bq->bq_mapradio && service_is_radio(t))
+      } else if (!bq->bq_mapradio && service_is_radio(t)) {
+        tvhinfo(LS_BOUQUET, "unmap channel call 6");
         bouquet_unmap_channel(bq, t);
-      else if (!bq->bq_mapencrypted && service_is_encrypted(t))
+      } else if (!bq->bq_mapencrypted && service_is_encrypted(t)) {
+        tvhinfo(LS_BOUQUET, "unmap channel call 7");
         bouquet_unmap_channel(bq, t);
+      }
     }
   }
   bouquet_map_to_channels(bq);
