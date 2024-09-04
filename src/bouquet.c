@@ -184,8 +184,10 @@ bouquet_destroy_by_service(service_t *t, int delconf)
   lock_assert(&global_lock);
 
   RB_FOREACH(bq, &bouquets, bq_link)
-    if (idnode_set_exists(bq->bq_services, &t->s_id))
+    if (idnode_set_exists(bq->bq_services, &t->s_id)) {
+      tvhinfo(LS_BOUQUET, "bouquet_remove_service call 1");
       bouquet_remove_service(bq, t, delconf);
+    }
   while ((sl = LIST_FIRST(&t->s_lcns)) != NULL) {
     LIST_REMOVE(sl, sl_link);
     free(sl);
@@ -436,6 +438,7 @@ bouquet_global_rescan_cb(void *unused)
   for (z = 0; z < global_bq->bq_services->is_count; z++) {
     s = (service_t *)global_bq->bq_services->is_array[z];
     if (!idnode_set_exists(active_svcs, &s->s_id)) {
+        tvhinfo(LS_BOUQUET, "bouquet_remove_service call 2");
         bouquet_remove_service(global_bq, s, 1);
     }
   }
@@ -543,10 +546,10 @@ bouquet_unmap_channel(bouquet_t *bq, service_t *t)
   while (ilm) {
     ilm_next = LIST_NEXT(ilm, ilm_in1_link);
     if (((channel_t *)ilm->ilm_in2)->ch_bouquet == bq) {
-      tvhinfo(LS_BOUQUET, "%s / %s: unmapped from %s",
+      tvhinfo(LS_BOUQUET, "%s / %s: unmapped from %s but skipped channel deletion",
               channel_get_name((channel_t *)ilm->ilm_in2, channel_blank_name),
               t->s_nicename, bq->bq_name ?: "<unknown>");
-      channel_delete((channel_t *)ilm->ilm_in2, 1);
+      //channel_delete((channel_t *)ilm->ilm_in2, 1);
     }
     ilm = ilm_next;
   }
@@ -578,7 +581,7 @@ static void
 bouquet_remove_service(bouquet_t *bq, service_t *s, int delconf)
 {
   bouquet_t *global_bq;
-  tvhtrace(LS_BOUQUET, "remove service %s from %s",
+  tvhinfo(LS_BOUQUET, "remove service %s from %s",
            s->s_nicename, bq->bq_name ?: "<unknown>");
   idnode_set_remove(bq->bq_services, &s->s_id);
   if (delconf)
@@ -623,8 +626,10 @@ bouquet_completed(bouquet_t *bq, uint32_t seen)
   for (z = 0; z < bq->bq_services->is_count; z++)
     if (!idnode_set_exists(bq->bq_active_services, bq->bq_services->is_array[z]))
       idnode_set_add(remove, bq->bq_services->is_array[z], NULL, NULL);
-  for (z = 0; z < remove->is_count; z++)
+  for (z = 0; z < remove->is_count; z++) {
+    tvhinfo(LS_BOUQUET, "bouquet_remove_service call 3");
     bouquet_remove_service(bq, (service_t *)remove->is_array[z], 1);
+  }
   idnode_set_free(remove);
 
   /* Remove no longer used LCNs */
