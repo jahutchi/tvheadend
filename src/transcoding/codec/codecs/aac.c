@@ -22,16 +22,26 @@
 
 
 /* aac ====================================================================== */
-
+#if LIBAVCODEC_VERSION_MAJOR > 59
+// see aacenc_profiles[] ffmpeg-7.0/libavcodec/aacenctab.h + AV_PROFILE_UNKNOWN
+static const AVProfile aac_profiles[] = {
+    { AV_PROFILE_AAC_MAIN,      "Main" },
+    { AV_PROFILE_AAC_LOW,       "LC" },
+    { AV_PROFILE_AAC_LTP,       "LTP" },
+    { AV_PROFILE_MPEG2_AAC_LOW, "MPEG2_LC" },
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile aac_profiles[] = {
     { FF_PROFILE_AAC_MAIN, "Main" },
     { FF_PROFILE_AAC_LOW,  "LC" },
     { FF_PROFILE_AAC_LTP,  "LTP" },
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 #if LIBAVCODEC_VERSION_MAJOR > 59
-// see aac_chan_configs in ffmpeg-6.0/libavcodec/aacenctab.h
+// see aac_normal_chan_layouts[7] in ffmpeg-7.0/libavcodec/aacenctab.h + NULL termination
 static const AVChannelLayout aac_channel_layouts[] = {
     AV_CHANNEL_LAYOUT_MONO,
     AV_CHANNEL_LAYOUT_STEREO,
@@ -40,6 +50,7 @@ static const AVChannelLayout aac_channel_layouts[] = {
     AV_CHANNEL_LAYOUT_5POINT0_BACK,
     AV_CHANNEL_LAYOUT_5POINT1_BACK,
     AV_CHANNEL_LAYOUT_7POINT1,
+    { 0 },
 };
 #else
 // see aac_chan_configs in ffmpeg-3.0.2/libavcodec/aacenctab.h

@@ -188,11 +188,20 @@ tvhva_context_profile(TVHVAContext *self, AVCodecContext *avctx)
     switch (avctx->codec->id) {
         case AV_CODEC_ID_MPEG2VIDEO:
             switch (avctx->profile) {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_UNKNOWN:
+                case AV_PROFILE_MPEG2_MAIN:
+#else
                 case FF_PROFILE_UNKNOWN:
                 case FF_PROFILE_MPEG2_MAIN:
+#endif
                     check = VAProfileMPEG2Main;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_MPEG2_SIMPLE:
+#else
                 case FF_PROFILE_MPEG2_SIMPLE:
+#endif
                     check = VAProfileMPEG2Simple;
                     break;
                 default:
@@ -201,14 +210,27 @@ tvhva_context_profile(TVHVAContext *self, AVCodecContext *avctx)
             break;
         case AV_CODEC_ID_H264:
             switch (avctx->profile) {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_UNKNOWN:
+                case AV_PROFILE_H264_HIGH:
+#else
                 case FF_PROFILE_UNKNOWN:
                 case FF_PROFILE_H264_HIGH:
+#endif
                     check = VAProfileH264High;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_H264_CONSTRAINED_BASELINE:
+#else
                 case FF_PROFILE_H264_CONSTRAINED_BASELINE:
+#endif
                     check = VAProfileH264ConstrainedBaseline;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_H264_MAIN:
+#else
                 case FF_PROFILE_H264_MAIN:
+#endif
                     check = VAProfileH264Main;
                     break;
                 default:
@@ -217,12 +239,22 @@ tvhva_context_profile(TVHVAContext *self, AVCodecContext *avctx)
             break;
         case AV_CODEC_ID_HEVC:
             switch (avctx->profile) {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_UNKNOWN:
+                case AV_PROFILE_HEVC_MAIN:
+#else
                 case FF_PROFILE_UNKNOWN:
                 case FF_PROFILE_HEVC_MAIN:
+#endif
                     check = VAProfileHEVCMain;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_HEVC_MAIN_10:
+                case AV_PROFILE_HEVC_REXT:
+#else
                 case FF_PROFILE_HEVC_MAIN_10:
                 case FF_PROFILE_HEVC_REXT:
+#endif
                     check = VAProfileHEVCMain10;
                     break;
                 default:
@@ -231,7 +263,11 @@ tvhva_context_profile(TVHVAContext *self, AVCodecContext *avctx)
             break;
         case AV_CODEC_ID_VP8:
             switch (avctx->profile) {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_UNKNOWN:
+#else
                 case FF_PROFILE_UNKNOWN:
+#endif
                     check = VAProfileVP8Version0_3;
                     break;
                 default:
@@ -240,17 +276,34 @@ tvhva_context_profile(TVHVAContext *self, AVCodecContext *avctx)
             break;
         case AV_CODEC_ID_VP9:
             switch (avctx->profile) {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_UNKNOWN:
+                case AV_PROFILE_VP9_0:
+#else
                 case FF_PROFILE_UNKNOWN:
                 case FF_PROFILE_VP9_0:
+#endif
                     check = VAProfileVP9Profile0;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_VP9_1:
+#else
                 case FF_PROFILE_VP9_1:
+#endif
                     check = VAProfileVP9Profile1;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_VP9_2:
+#else
                 case FF_PROFILE_VP9_2:
+#endif
                     check = VAProfileVP9Profile2;
                     break;
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                case AV_PROFILE_VP9_3:
+#else
                 case FF_PROFILE_VP9_3:
+#endif
                     check = VAProfileVP9Profile3;
                     break;
                 default:

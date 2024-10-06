@@ -51,8 +51,13 @@ tvh_codec_get_list_profiles(TVHCodec *self)
             list = NULL;
         }
         else {
+#if LIBAVCODEC_VERSION_MAJOR > 59
+            ADD_ENTRY(list, map, s32, AV_PROFILE_UNKNOWN, str, AUTO_STR);
+            for (p = (AVProfile *)profiles; p->profile != AV_PROFILE_UNKNOWN; p++) {
+#else
             ADD_ENTRY(list, map, s32, FF_PROFILE_UNKNOWN, str, AUTO_STR);
             for (p = (AVProfile *)profiles; p->profile != FF_PROFILE_UNKNOWN; p++) {
+#endif
                 if (!(map = htsmsg_create_map())) {
                     htsmsg_destroy(list);
                     list = NULL;
@@ -80,7 +85,11 @@ tvh_codec_profile_base_open(TVHCodecProfile *self, AVDictionary **opts)
 {
     AV_DICT_SET_TVH_REQUIRE_META(opts, 1);
     // profile
+#if LIBAVCODEC_VERSION_MAJOR > 59
+    if (self->profile != AV_PROFILE_UNKNOWN) {
+#else
     if (self->profile != FF_PROFILE_UNKNOWN) {
+#endif
         AV_DICT_SET_INT(opts, "profile", self->profile, 0);
     }
     return 0;
@@ -281,7 +290,11 @@ const codec_profile_class_t codec_profile_class = {
                 .get_opts = codec_profile_class_profile_get_opts,
                 .off      = offsetof(TVHCodecProfile, profile),
                 .list     = codec_profile_class_profile_list,
+#if LIBAVCODEC_VERSION_MAJOR > 59
+                .def.i    = AV_PROFILE_UNKNOWN,
+#else
                 .def.i    = FF_PROFILE_UNKNOWN,
+#endif
             },
             {}
         }

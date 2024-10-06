@@ -115,6 +115,17 @@ tvh_codec_profile_libx265_destroy(TVHCodecProfile *_self)
 
 #include <x264.h>
 
+#if LIBAVCODEC_VERSION_MAJOR > 59
+static const AVProfile libx264_profiles[] = {
+    { AV_PROFILE_H264_BASELINE, "Baseline" },
+    { AV_PROFILE_H264_MAIN,     "Main" },
+    { AV_PROFILE_H264_HIGH,     "High" },
+    { AV_PROFILE_H264_HIGH_10,  "High 10" },
+    { AV_PROFILE_H264_HIGH_422, "High 4:2:2" },
+    { AV_PROFILE_H264_HIGH_444, "High 4:4:4" },
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile libx264_profiles[] = {
     { FF_PROFILE_H264_BASELINE, "Baseline" },
     { FF_PROFILE_H264_MAIN,     "Main" },
@@ -124,6 +135,7 @@ static const AVProfile libx264_profiles[] = {
     { FF_PROFILE_H264_HIGH_444, "High 4:4:4" },
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 
 static int

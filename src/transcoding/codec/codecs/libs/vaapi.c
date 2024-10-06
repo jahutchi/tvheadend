@@ -588,13 +588,21 @@ static const codec_profile_class_t codec_profile_vaapi_class = {
 
 
 /* h264_vaapi =============================================================== */
-
+#if LIBAVCODEC_VERSION_MAJOR > 59
+static const AVProfile vaapi_h264_profiles[] = {
+    { AV_PROFILE_H264_CONSTRAINED_BASELINE, "Constrained Baseline" },
+    { AV_PROFILE_H264_MAIN,                 "Main" },
+    { AV_PROFILE_H264_HIGH,                 "High" },
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile vaapi_h264_profiles[] = {
     { FF_PROFILE_H264_CONSTRAINED_BASELINE, "Constrained Baseline" },
     { FF_PROFILE_H264_MAIN,                 "Main" },
     { FF_PROFILE_H264_HIGH,                 "High" },
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 static int
 tvh_codec_profile_vaapi_h264_open(tvh_codec_profile_vaapi_t *self,
@@ -913,13 +921,21 @@ TVHVideoCodec tvh_codec_vaapi_h264 = {
 
 
 /* hevc_vaapi =============================================================== */
-
+#if LIBAVCODEC_VERSION_MAJOR > 59
+static const AVProfile vaapi_hevc_profiles[] = {
+    { AV_PROFILE_HEVC_MAIN,     "Main" },
+    { AV_PROFILE_HEVC_MAIN_10,  "Main 10" },
+    { AV_PROFILE_HEVC_REXT,     "Rext" },
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile vaapi_hevc_profiles[] = {
     { FF_PROFILE_HEVC_MAIN, "Main" },
     { FF_PROFILE_HEVC_MAIN_10, "Main 10" },
     { FF_PROFILE_HEVC_REXT, "Rext" },
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 static int
 tvh_codec_profile_vaapi_hevc_open(tvh_codec_profile_vaapi_t *self,
@@ -1228,10 +1244,15 @@ TVHVideoCodec tvh_codec_vaapi_hevc = {
 
 
 /* vp8_vaapi =============================================================== */
-
+#if LIBAVCODEC_VERSION_MAJOR > 59
+static const AVProfile vaapi_vp8_profiles[] = {
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile vaapi_vp8_profiles[] = {
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 static int
 tvh_codec_profile_vaapi_vp8_open(tvh_codec_profile_vaapi_t *self,
@@ -1536,10 +1557,15 @@ TVHVideoCodec tvh_codec_vaapi_vp8 = {
 };
 
 /* vp9_vaapi =============================================================== */
-
+#if LIBAVCODEC_VERSION_MAJOR > 59
+static const AVProfile vaapi_vp9_profiles[] = {
+    { AV_PROFILE_UNKNOWN },
+};
+#else
 static const AVProfile vaapi_vp9_profiles[] = {
     { FF_PROFILE_UNKNOWN },
 };
+#endif
 
 static int
 tvh_codec_profile_vaapi_vp9_open(tvh_codec_profile_vaapi_t *self,

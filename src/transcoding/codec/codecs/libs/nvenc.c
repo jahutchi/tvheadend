@@ -52,7 +52,11 @@
 #define NV_ENC_HEVC_PROFILE_MAIN_10 			    1
 #define NV_ENC_HEVC_PROFILE_REXT			        2
 
+#if LIBAVCODEC_VERSION_MAJOR > 59
+#define NV_ENC_PROFILE_UNKNOWN                      AV_PROFILE_UNKNOWN
+#else
 #define NV_ENC_PROFILE_UNKNOWN                      FF_PROFILE_UNKNOWN
+#endif
 
 #define NV_ENC_LEVEL_AUTOSELECT                     0
 
