@@ -1257,7 +1257,7 @@ channel_create0
   /* Defaults */
   ch->ch_enabled  = 1;
   ch->ch_autoname = 1;
-  ch->ch_epgauto  = 1;
+  ch->ch_epgauto  = 0;
   ch->ch_epg_running = -1;
 
   atomic_set(&ch->ch_changed_ref, 0);
