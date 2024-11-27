@@ -343,6 +343,7 @@ epggrab_channel_t *epggrab_channel_create
   ec->update_chicon = 1;
   ec->update_chnum = 1;
   ec->update_chname = 1;
+  ec->only_one = 1;
 
   if (conf)
     idnode_load(&ec->idnode, conf);
@@ -395,6 +396,7 @@ epggrab_channel_t *epggrab_channel_find
       ec->enabled = 1;
       ec->id   = strdup(ec->id);
       ec->mod  = mod;
+      ec->only_one = 1;
       TAILQ_INSERT_TAIL(&epggrab_channel_entries, ec, all_link);
 
       if (idnode_insert(&ec->idnode, NULL, &epggrab_channel_class, 0))
