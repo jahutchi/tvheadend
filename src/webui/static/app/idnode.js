@@ -2036,7 +2036,7 @@ tvheadend.idnode_grid = function(panel, conf)
                 data: [[25, '25'], [50, '50'], [100, '100'],
                     [200, '200'], [999999999, _('All')]]
             }),
-            value: 50,
+            value: 999999999,
             mode: 'local',
             forceSelection: false,
             triggerAction: 'all',
