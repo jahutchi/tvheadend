@@ -694,7 +694,7 @@ tvheadend.loading = function(on) {
 tvheadend.PagingToolbarConf = function(conf, title, auto, count)
 {
   conf.width = 50;
-  conf.pageSize = 50;
+  conf.pageSize = 999999999;
   conf.displayInfo = true;
                     /// {0} start, {1} end, {2} total, {3} title
   conf.displayMsg = _('{3} {0} - {1} of {2}').replace('{3}', title);
