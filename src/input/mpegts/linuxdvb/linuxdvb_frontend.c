@@ -944,7 +944,9 @@ linuxdvb_frontend_monitor ( void *aux )
       return;
     }
     if (lfe->lfe_powersave) {
+      tvhtrace(LS_DISEQC, "%s - powersave enabled - running linuxdvb_satconf_power_save", buf);
       if (lfe->lfe_satconf && linuxdvb_satconf_power_save(lfe->lfe_satconf) > 0) {
+        tvhtrace(LS_DISEQC, "%s - powersave enabled - needed to re-arm timer", buf);
         /* re-arm */
         mtimer_arm_rel(&lfe->lfe_monitor_timer, linuxdvb_frontend_monitor, lfe, sec2mono(1));
         return;
