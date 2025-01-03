@@ -888,11 +888,20 @@ int
 linuxdvb_satconf_power_save
   ( linuxdvb_satconf_t *ls )
 {
-  if (ls->ls_active_diseqc) /* wait for the timer to finish things */
+  linuxdvb_frontend_t   *lfe   = (linuxdvb_frontend_t*)ls->ls_frontend;
+  char lfe_name[256];
+  lfe->mi_display_name((mpegts_input_t*)lfe, lfe_name, sizeof(lfe_name));
+
+  if (ls->ls_active_diseqc) {
+    /* wait for the timer to finish things */
+    tvhtrace(LS_DISEQC, "%s: linuxdvb_satconf_power_save - ls->ls_active_diseqc is true", lfe_name);
     return 1;
+  }
   mtimer_disarm(&ls->ls_diseqc_timer);
   if (ls->ls_frontend && ls->ls_lnb_poweroff) {
+    tvhtrace(LS_DISEQC, "%s: linuxdvb_satconf_power_save - switching off voltage", lfe_name);
     linuxdvb_diseqc_set_volt(ls, -1);
+    tvhtrace(LS_DISEQC, "%s: linuxdvb_satconf_power_save - running linuxdvb_satconf_reset", lfe_name);
     linuxdvb_satconf_reset(ls);
   }
   return 0;
@@ -953,20 +962,25 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
   int r, i, vol, pol, band, freq;
   uint32_t f;
   linuxdvb_satconf_t *ls = lse->lse_parent;
+  linuxdvb_frontend_t   *lfe   = (linuxdvb_frontend_t*)ls->ls_frontend;
+
+  char lfe_name[256];
+  lfe->mi_display_name((mpegts_input_t*)lfe, lfe_name, sizeof(lfe_name));
 
   /* Get beans in a row */
   mpegts_mux_instance_t *mmi   = ls->ls_mmi;
 
   if (mmi == NULL && ls->ls_active_diseqc) {
+    tvhtrace(LS_DISEQC, "%s: no mmi and diseqc active", lfe_name);
     /* handle the rotor position update */
     if (ls->ls_active_diseqc == lse->lse_rotor)
       lse->lse_rotor->ld_post(lse->lse_rotor, ls, lse);
     ls->ls_active_diseqc = NULL;
+    tvhtrace(LS_DISEQC, "%s: running linuxdvb_satconf_power_save", lfe_name);
     linuxdvb_satconf_power_save(ls);
     return 0;
   }
 
-  linuxdvb_frontend_t   *lfe   = (linuxdvb_frontend_t*)ls->ls_frontend;
   dvb_mux_t             *lm    = (dvb_mux_t*)mmi->mmi_mux;
   linuxdvb_diseqc_t     *lds[] = {
     ls->ls_switch_rotor ? (linuxdvb_diseqc_t*)lse->lse_switch :
@@ -977,17 +991,23 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
     (linuxdvb_diseqc_t*)lse->lse_lnb
   };
 
+  if (!lm)
+    tvhtrace(LS_DISEQC, "%s: warning lm is not set", lfe_name);
+
   if (lse->lse_lnb) {
     pol  = lse->lse_lnb->lnb_pol (lse->lse_lnb, lm) & 0x1;
     band = lse->lse_lnb->lnb_band(lse->lse_lnb, lm) & 0x1;
     freq = lse->lse_lnb->lnb_freq(lse->lse_lnb, lm);
+    tvhtrace(LS_DISEQC, "%s: pol=%d band=%d freq=%d", lfe_name, pol, band, freq);
   } else {
     tvherror(LS_LINUXDVB, "LNB is not defined!!!");
     return -1;
   }
   if (!lse->lse_en50494) {
     vol = pol;
+    tvhtrace(LS_DISEQC, "%s: set vol to pol: vol=%d pol=%d", lfe_name, vol, pol);
   } else {
+    tvhtrace(LS_DISEQC, "%s: set vol to 13V (0): lse_en50494 detected", lfe_name);
     vol  = 0; /* 13V */
   }
 
@@ -1001,6 +1021,7 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
   if (!lse->lse_en50494 || lse->lse_switch || lse->lse_rotor) {
     if (ls->ls_diseqc_full) {
       ls->ls_last_tone_off = 0; /* force */
+      tvhtrace(LS_DISEQC, "%s: *** running linuxdvb_satconf_start. voltage=%d ***", lfe_name, vol);
       if (linuxdvb_satconf_start(ls, 0, vol))
         return -1;
     }
@@ -1010,10 +1031,14 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
   ls->ls_active_diseqc = NULL;
   for (i = ls->ls_diseqc_idx; i < ARRAY_SIZE(lds); i++) {
     if (!lds[i]) continue;
+    tvhtrace(LS_DISEQC, "%s: *** running ld_tune logic. vol=%d pol=%d band=%d freq=%d ***", lfe_name, vol, pol, band, freq);
     r = lds[i]->ld_tune(lds[i], lm, ls, lse, vol, pol, band, freq);
 
     /* Error */
-    if (r < 0) return r;
+    if (r < 0) {
+      tvhtrace(LS_DISEQC, "%s: ERROR during tune logic - r is less than zero", lfe_name);
+      return r;
+    }
 
     /* Pending */
     if (r != 0) {
@@ -1033,6 +1058,7 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
   /* EN50494 devices have another mechanism to select polarization */
 
   /* Set the voltage */
+  tvhtrace(LS_DISEQC, "%s: *** post-tune - calling linuxdvb_diseqc_set_volt. voltage=%d  ***", lfe_name, vol);
   if (linuxdvb_diseqc_set_volt(ls, vol))
     return -1;
 
@@ -1047,6 +1073,7 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
       }
       ls->ls_last_tone_off = band + 1;
       tvh_safe_usleep(20000); // Allow LNB to settle before tuning
+      tvhtrace(LS_DISEQC, "%s: LNB settled - now tune", lfe_name);
     }
   }
 
@@ -1055,6 +1082,7 @@ linuxdvb_satconf_ele_tune ( linuxdvb_satconf_ele_t *lse )
   f = lse->lse_en50494
     ? ((linuxdvb_en50494_t*)lse->lse_en50494)->le_tune_freq
     : freq;
+  tvhtrace(LS_DISEQC, "%s: calling linuxdvb_frontend_tune1 freq=%d ***", lfe_name, f);
   return linuxdvb_frontend_tune1(lfe, mmi, f);
 }
 
@@ -1843,30 +1871,40 @@ int
 linuxdvb_diseqc_set_volt ( linuxdvb_satconf_t *ls, int vol )
 {
   linuxdvb_frontend_t *lfe = (linuxdvb_frontend_t*)ls->ls_frontend;
+  char lfe_name[256];
+  lfe->mi_display_name((mpegts_input_t*)lfe, lfe_name, sizeof(lfe_name));
 
+  tvhtrace(LS_DISEQC, "%s: linuxdvb_diseqc_set_volt: %d", lfe_name, vol);
   vol = vol < 0 ? -1 : !!(vol > 0);
+  tvhtrace(LS_DISEQC, "%s: linuxdvb_diseqc_set_volt: %d ls_last_vol: %d", lfe_name, vol, ls->ls_last_vol);
+
   /* Already set ? */
-  if (vol >= 0 && ls->ls_last_vol == vol + 1)
+  if (vol >= 0 && ls->ls_last_vol == vol + 1) {
+    tvhtrace(LS_DISEQC, "%s: correct voltage already set", lfe_name);
     return 0;
+  }
   /* High voltage handling */
   if (ls->ls_lnb_highvol > 0) {
     int v = ls->ls_lnb_highvol > 1 ? 1 : 0;
-    tvhtrace(LS_DISEQC, "set high voltage %d", v);
+    tvhtrace(LS_DISEQC, "%s: set high voltage %d", lfe_name, v);
     if (ioctl(linuxdvb_satconf_fe_fd(ls), FE_ENABLE_HIGH_LNB_VOLTAGE, v))
-      tvherror(LS_DISEQC, "failed to set high voltage %d (e=%s)", v, strerror(errno));
+      tvherror(LS_DISEQC, "%s: failed to set high voltage %d (e=%s)", lfe_name, v, strerror(errno));
   }
   /* Set voltage */
-  tvhtrace(LS_DISEQC, "set voltage %dV", vol ? (vol < 0 ? 0 : 18) : 13);
+  tvhtrace(LS_DISEQC, "%s: set voltage %dV", lfe_name, vol ? (vol < 0 ? 0 : 18) : 13);
   if (ioctl(linuxdvb_satconf_fe_fd(ls), FE_SET_VOLTAGE,
             vol ? (vol < 0 ? SEC_VOLTAGE_OFF : SEC_VOLTAGE_18) : SEC_VOLTAGE_13)) {
-    tvherror(LS_DISEQC, "failed to set voltage (e=%s)", strerror(errno));
+    tvherror(LS_DISEQC, "%s: failed to set voltage (e=%s)", lfe_name, strerror(errno));
     ls->ls_last_vol = 0;
     lfe->lfe_degraded = 1;
     return -1;
   }
   if (vol >= 0)
     tvh_safe_usleep(15000);
+
+  tvhtrace(LS_DISEQC, "%s: linuxdvb_diseqc_set_volt: setting ls->ls_last_vol=%d", lfe_name, vol + 1);
   ls->ls_last_vol = vol + 1;
+  tvhtrace(LS_DISEQC, "%s: linuxdvb_diseqc_set_volt: all done", lfe_name);
   return 0;
 }
 
