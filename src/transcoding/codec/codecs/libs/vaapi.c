@@ -84,6 +84,12 @@
 #define VAAPI_ENC_B_REFERENCE_I_P       1
 #define VAAPI_ENC_B_REFERENCE_I_P_B     2
 
+#define VAAPI_DEINT_MODE_DEFAULT        0
+#define VAAPI_DEINT_MODE_BOB            1
+#define VAAPI_DEINT_MODE_WEAVE          2
+#define VAAPI_DEINT_MODE_MADI           3
+#define VAAPI_DEINT_MODE_MCDI           4
+
 #define UI_CODEC_AVAILABLE_OFFSET       0
 #define UI_MAX_B_FRAMES_OFFSET          1
 #define UI_MAX_QUALITY_OFFSET           4
@@ -130,6 +136,19 @@ rc_mode_get_list( void *o, const char *lang )
         { N_("ICQ"),    VAAPI_ENC_PARAMS_RC_ICQ },
         { N_("QVBR"),   VAAPI_ENC_PARAMS_RC_QVBR },
         { N_("AVBR"),   VAAPI_ENC_PARAMS_RC_AVBR },
+    };
+    return strtab2htsmsg(tab, 1, lang);
+}
+
+static htsmsg_t *
+deinterlace_vaapi_mode_get_list( void *o, const char *lang )
+{
+    static const struct strtab tab[] = {
+        { N_("Default"),                                 VAAPI_DEINT_MODE_DEFAULT },
+        { N_("Bob Deinterlacing"),                       VAAPI_DEINT_MODE_BOB },
+        { N_("Weave Deinterlacing"),                     VAAPI_DEINT_MODE_WEAVE },
+        { N_("Motion Adaptive Deinterlacing (MADI)"),    VAAPI_DEINT_MODE_MADI },
+        { N_("Motion Compensated Deinterlacing (MCDI)"), VAAPI_DEINT_MODE_MCDI },
     };
     return strtab2htsmsg(tab, 1, lang);
 }
@@ -266,6 +285,19 @@ typedef struct {
  * 2 - AMD
  */
     int platform;
+/**
+ * VAAPI Deinterlace mode [deinterlace_vaapi mode parameter]
+ * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
+ * @note
+ * int:
+ * 0 - Default: Use the highest-numbered (and therefore most advanced) deinterlacing algorithm
+ * 1 - Use the bob deinterlacing algorithm
+ * 2 - Use the weave deinterlacing algorithm
+ * 3 - Use the motion adaptive deinterlacing algorithm
+ * 4 - Use the motion compensated deinterlacing algorithm
+ */
+    int deinterlace_vaapi_mode;
+
     int loop_filter_level;
     int loop_filter_sharpness;
     double buff_factor;
@@ -384,6 +416,9 @@ static int
 tvh_codec_profile_vaapi_open(tvh_codec_profile_vaapi_t *self,
                              AVDictionary **opts)
 {
+    // deinterlace_vaapi mode
+    AV_DICT_SET_INT(opts, "tvh_transcode_filter_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, 0);
+
     // pix_fmt
     AV_DICT_SET_PIX_FMT(opts, self->pix_fmt, AV_PIX_FMT_VAAPI);
     return 0;
@@ -544,6 +579,19 @@ static const codec_profile_class_t codec_profile_vaapi_class = {
                 .get_opts = codec_profile_class_get_opts,
                 .off      = offsetof(tvh_codec_profile_vaapi_t, bit_rate_scale_factor),
                 .def.d    = 0,
+            },
+            {
+                .type     = PT_INT,
+                .id       = "deinterlace_vaapi_mode",
+                .name     = N_("VAAPI Deinterlace mode"),
+                .desc     = N_("Mode to use for VAAPI Deinterlacing. "
+                               "'Default' selects the most advanced deinterlacer, i.e. the mode appearing last in this list. "
+                               "Tip: MADI and MCDI usually yield the smoothest results, especially when used with field rate output."),
+                .group    = 2,
+                .opts     = PO_ADVANCED,
+                .off      = offsetof(tvh_codec_profile_vaapi_t, deinterlace_vaapi_mode),
+                .list     = deinterlace_vaapi_mode_get_list,
+                .def.i    = VAAPI_DEINT_MODE_DEFAULT,
             },
             {
                 .type     = PT_INT,
