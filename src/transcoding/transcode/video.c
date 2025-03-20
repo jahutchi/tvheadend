@@ -336,7 +336,7 @@ static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
     avframe->pts = avframe->best_effort_timestamp;
-    if (avframe->pts <= self->pts) {
+    if (avframe->pts < self->pts) {
         tvh_context_log(self, LOG_WARNING,
                         "Invalid pts (%"PRId64") <= last (%"PRId64"), dropping frame",
                         avframe->pts, self->pts);
