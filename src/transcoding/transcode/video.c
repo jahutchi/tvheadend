@@ -184,6 +184,10 @@ tvh_video_context_open_decoder(TVHContext *self, AVDictionary **opts)
     if ((hwaccel = tvh_codec_profile_video_get_hwaccel(self->profile)) < 0) {
         return -1;
     }
+    if (self->iavctx->codec->id == AV_CODEC_ID_MPEG2VIDEO) {
+      hwaccel = 0;
+      tvh_context_log(self, LOG_WARNING, "mpeg2 detected - disabling hw decode");
+    }
     if (hwaccel) {
         self->iavctx->get_format = hwaccels_decode_get_format;
     }
@@ -231,6 +235,10 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     int hwaccel = -1;
     if ((hwaccel = tvh_codec_profile_video_get_hwaccel(self->profile)) < 0) {
         return -1;
+    }
+    if (self->iavctx->codec->id == AV_CODEC_ID_MPEG2VIDEO) {
+      hwaccel = 0;
+      tvh_context_log(self, LOG_WARNING, "mpeg2 detected -- disabling hw decode");
     }
     if (_video_filters_hw_pix_fmt(self->oavctx->pix_fmt)){
         // encoder is hw accelerated
