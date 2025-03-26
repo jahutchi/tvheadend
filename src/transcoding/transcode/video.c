@@ -219,7 +219,7 @@ tvh_video_context_notify_gh(TVHContext *self)
 static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
-    AVRational ticks_per_frame;
+    //AVRational ticks_per_frame;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
