@@ -267,6 +267,7 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 #endif // from ENABLE_HWACCELS
 
     // XXX: is this a safe assumption?
+    /*
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
@@ -281,6 +282,7 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     self->oavctx->gop_size *= 3;
 
     self->oavctx->sample_aspect_ratio = self->iavctx->sample_aspect_ratio;
+    */
     return 0;
 }
 
