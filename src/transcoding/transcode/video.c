@@ -270,6 +270,7 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
+    self->iavctx->framerate = av_make_q(50, 1);
     self->oavctx->framerate = av_make_q(50, 1);
     self->oavctx->ticks_per_frame = (90000 * self->oavctx->framerate.den) / self->oavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
     ticks_per_frame = av_make_q(self->oavctx->ticks_per_frame, 1);
