@@ -84,14 +84,14 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         }
         else {
             // sw deint
-            if (str_snprintf(deint, sizeof(deint), "yadif")) {
+            if (str_snprintf(deint, sizeof(deint), "yadif=1")) {
                 return -1;
             }
         }
     }
 #else
     if (filter_deint) {
-        if (str_snprintf(deint, sizeof(deint), "yadif")) {
+        if (str_snprintf(deint, sizeof(deint), "yadif=1")) {
             return -1;
         }
     }
