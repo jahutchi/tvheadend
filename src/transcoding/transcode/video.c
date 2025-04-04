@@ -399,7 +399,20 @@ tvh_video_context_wrap(TVHContext *self, AVPacket *avpkt, th_pkt_t *pkt)
         // (all the others are assumed to be P-frames)
 #if LIBAVUTIL_VERSION_MAJOR > 58 || (LIBAVUTIL_VERSION_MAJOR == 58 && LIBAVUTIL_VERSION_MINOR > 2)
         if (self->oavframe->flags & AV_FRAME_FLAG_KEY) {
+            tvh_context_log(self, LOG_WARNING, "Key frame encountered");
             pict_type = AV_PICTURE_TYPE_I;
+        }
+        else if (self->oavframe->flags & AV_FRAME_FLAG_CORRUPT) {
+            tvh_context_log(self, LOG_WARNING, "Corrupt frame encountered");
+            pict_type = AV_PICTURE_TYPE_P;
+        }
+        else if (self->oavframe->flags & AV_FRAME_FLAG_DISCARD) {
+            tvh_context_log(self, LOG_WARNING, "Frame to Discard encountered");
+            pict_type = AV_PICTURE_TYPE_P;
+        }
+        else if (self->oavframe->flags & AV_FRAME_FLAG_INTERLACED) {
+            tvh_context_log(self, LOG_WARNING, "Interlaced frame encountered");
+            pict_type = AV_PICTURE_TYPE_P;
         }
         else {
             pict_type = AV_PICTURE_TYPE_P;
