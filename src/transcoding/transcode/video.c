@@ -384,6 +384,7 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
     if (avframe->flags & AV_FRAME_FLAG_KEY) {
         tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked as a key frame",
                         avframe->pts);
+        return AVERROR(EAGAIN);
     }
     if (avframe->flags & AV_FRAME_FLAG_CORRUPT) {
         tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked to be discarded",
