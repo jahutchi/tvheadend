@@ -219,7 +219,7 @@ tvh_video_context_notify_gh(TVHContext *self)
 static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
-    //AVRational ticks_per_frame;
+    AVRational ticks_per_frame;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
@@ -267,7 +267,6 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 #endif // from ENABLE_HWACCELS
 
     // XXX: is this a safe assumption?
-    /*
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
@@ -282,7 +281,6 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     self->oavctx->gop_size *= 3;
 
     self->oavctx->sample_aspect_ratio = self->iavctx->sample_aspect_ratio;
-    */
     return 0;
 }
 
