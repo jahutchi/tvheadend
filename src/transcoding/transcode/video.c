@@ -354,8 +354,9 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
     }
     if (avframe->pts == self->pts) {
         tvh_context_log(self, LOG_WARNING,
-                        "Current pts (%"PRId64") = last pts (%"PRId64"), continuing regardless",
+                        "Current pts (%"PRId64") = last pts (%"PRId64"), dropping frame",
                         avframe->pts, self->pts);
+        return AVERROR(EAGAIN);
     }
     self->pts = avframe->pts;
 #if LIBAVUTIL_VERSION_MAJOR > 58 || (LIBAVUTIL_VERSION_MAJOR == 58 && LIBAVUTIL_VERSION_MINOR > 2)
