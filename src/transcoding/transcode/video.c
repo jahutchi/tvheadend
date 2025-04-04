@@ -352,6 +352,11 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
                         avframe->pts, self->pts);
         return AVERROR(EAGAIN);
     }
+    if (avframe->pts == self->pts) {
+        tvh_context_log(self, LOG_WARNING,
+                        "Current pts (%"PRId64") = last pts (%"PRId64"), continuing regardless",
+                        avframe->pts, self->pts);
+    }
     self->pts = avframe->pts;
 #if LIBAVUTIL_VERSION_MAJOR > 58 || (LIBAVUTIL_VERSION_MAJOR == 58 && LIBAVUTIL_VERSION_MINOR > 2)
     if (avframe->flags & AV_FRAME_FLAG_INTERLACED) {
@@ -370,6 +375,27 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         self->oavctx->field_order = AV_FIELD_PROGRESSIVE;
     }
 #endif
+
+    if (avframe->flags & AV_FRAME_FLAG_CORRUPT) {
+        tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked corrupt",
+                        avframe->pts);
+    }
+    if (avframe->flags & AV_FRAME_FLAG_KEY) {
+        tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked as a key frame",
+                        avframe->pts);
+    }
+    if (avframe->flags & AV_FRAME_FLAG_CORRUPT) {
+        tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked to be discarded",
+                        avframe->pts);
+    }
+    if (avframe->flags & AV_FRAME_FLAG_INTERLACED) {
+        tvh_context_log(self, LOG_WARNING, "Frame at pts (%"PRId64") was marked as interlaced",
+                        avframe->pts);
+        if (avframe->flags & AV_FRAME_FLAG_TOP_FIELD_FIRST) {
+            tvh_context_log(self, LOG_WARNING, "This interlaced frame was also marked as top field first");
+        }
+    }
+
     return 0;
 }
 
