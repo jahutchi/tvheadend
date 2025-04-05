@@ -671,7 +671,7 @@ endif
 $(LIB_ROOT)/$(FFMPEG)/.tvh_download:
 	@mkdir -p $(EBUILDIR)
 	$(call DOWNLOAD,$(FFMPEG_URL),$(LIB_ROOT)/$(FFMPEG_TB),$(FFMPEG_SHA1))
-	$(call UNTAR,$(FFMPEG_TB),j)
+	$(call UNTAR,$(FFMPEG_TB),z)
 	$(call PATCH,$(FFMPEG),$(FFMPEG_DIFFS))
 	@touch $@
 
