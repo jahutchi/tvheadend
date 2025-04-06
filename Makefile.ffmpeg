@@ -107,7 +107,7 @@ FFNVCODEC_SHA1 = 74231bb5572ebde98652a26ce98ede7895b4c730
 FFMPEG         = FFmpeg-release-6.1
 FFMPEG_TB      = 6.1.tar.gz
 FFMPEG_URL     = https://github.com/jahutchi/FFmpeg/archive/refs/heads/release/$(FFMPEG_TB)
-FFMPEG_SHA1    = 1229f7741f4d258bf89fa28bcfd21f43c0dbadf9
+FFMPEG_SHA1    = dbd89d54bf010351915970423202e869fb7a9763
 
 
 # ##############################################################################
