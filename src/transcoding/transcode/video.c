@@ -336,7 +336,14 @@ tvh_video_context_open(TVHContext *self, TVHOpenPhase phase, AVDictionary **opts
 static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
-    avframe->pts = avframe->best_effort_timestamp;
+    tvh_context_log(self, LOG_DEBUG, "Frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
+                                     avframe->pts, avframe->pkt_dts, avframe->duration);
+    if (avframe->pts == AV_NOPTS_VALUE) {
+      avframe->pts = avframe->best_effort_timestamp;
+      tvh_context_log(self, LOG_DEBUG, "Frame had invalid/unset pts so using best_effort_timestamp (%"PRId64")",
+                                       avframe->pts);
+    }
+
     if (avframe->pts <= self->pts) {
         tvh_context_log(self, LOG_WARNING,
                         "Invalid pts (%"PRId64") <= last (%"PRId64"), dropping frame",
