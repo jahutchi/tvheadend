@@ -216,6 +216,7 @@ static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
     AVRational ticks_per_frame;
+    int field_rate = 2;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
@@ -262,8 +263,8 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
-    self->oavctx->framerate = self->iavctx->framerate;
-    self->oavctx->ticks_per_frame = (90000 * self->iavctx->framerate.den) / self->iavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
+    self->oavctx->framerate = av_mul_q(self->iavctx->framerate, (AVRational) { field_rate, 1 }); //take into account double rate i.e. field-based deinterlacers
+    self->oavctx->ticks_per_frame = (90000 * self->oavctx->framerate.den) / self->oavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
     ticks_per_frame = av_make_q(self->oavctx->ticks_per_frame, 1);
     self->oavctx->time_base = av_inv_q(av_mul_q(
         self->oavctx->framerate, ticks_per_frame));
@@ -335,7 +336,17 @@ tvh_video_context_open(TVHContext *self, TVHOpenPhase phase, AVDictionary **opts
 static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
-    avframe->pts = avframe->best_effort_timestamp;
+    //TODO: only run this when a field-based deint is selected
+    avframe->duration = avframe->duration / 2;
+    avframe->pts = avframe->pts / 2;
+    tvh_context_log(self, LOG_DEBUG, "Frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
+                                     avframe->pts, avframe->pkt_dts, avframe->duration);
+    if (avframe->pts == AV_NOPTS_VALUE) {
+      avframe->pts = avframe->best_effort_timestamp;
+      tvh_context_log(self, LOG_DEBUG, "Frame had invalid/unset pts so using best_effort_timestamp (%"PRId64")",
+                                       avframe->pts);
+    }
+
     if (avframe->pts <= self->pts) {
         tvh_context_log(self, LOG_WARNING,
                         "Invalid pts (%"PRId64") <= last (%"PRId64"), dropping frame",
