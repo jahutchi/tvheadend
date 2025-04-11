@@ -693,7 +693,9 @@ vaapi_get_scale_filter(AVCodecContext *iavctx, AVCodecContext *oavctx,
 int
 vaapi_get_deint_filter(AVCodecContext *avctx, char *filter, size_t filter_len)
 {
-    snprintf(filter, filter_len, "deinterlace_vaapi=mode=motion_adaptive:rate=field:auto=0");
+    TVHContext *ctx = avctx->opaque;
+    snprintf(filter, filter_len, "deinterlace_vaapi=mode=%d:rate=%d:auto=%d",
+      ctx->deinterlace_vaapi_method, ctx->deinterlace_vaapi_rate, ctx->deinterlace_vaapi_auto);
     return 0;
 }
 

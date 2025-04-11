@@ -81,6 +81,7 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         if (ihw) {
             // hw deint
             hwaccels_get_deint_filter(self->iavctx, hw_deint, sizeof(hw_deint));
+            tvh_context_log(self, LOG_DEBUG, "Hardware Deinterlace Filter : %s", hw_deint);
         }
         else {
             // sw deint

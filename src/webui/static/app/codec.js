@@ -232,8 +232,12 @@ var codec_profile_forms = {
     'codec_profile_vaapi_h264': function(form) {
         function updateHWFilters(form) {
             var hwaccel_field = form.findField('hwaccel');
+            var deinterlace_field = form.findField('deinterlace');
             form.findField('hw_denoise').setDisabled(!hwaccel_field.getValue());
             form.findField('hw_sharpness').setDisabled(!hwaccel_field.getValue());
+            form.findField('deinterlace_vaapi_method').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_rate').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_auto').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
         }
 
         function checkBFrameQuality(low_power_field, desired_b_depth_field, b_reference_field, quality_field) {
@@ -456,8 +460,12 @@ var codec_profile_forms = {
     'codec_profile_vaapi_hevc': function(form) {
         function updateHWFilters(form) {
             var hwaccel_field = form.findField('hwaccel');
+            var deinterlace_field = form.findField('deinterlace');
             form.findField('hw_denoise').setDisabled(!hwaccel_field.getValue());
             form.findField('hw_sharpness').setDisabled(!hwaccel_field.getValue());
+            form.findField('deinterlace_vaapi_method').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_rate').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_auto').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
         }
 
         function checkBFrameQuality(low_power_field, desired_b_depth_field, b_reference_field, quality_field) {
@@ -680,8 +688,12 @@ var codec_profile_forms = {
     'codec_profile_vaapi_vp8': function(form) {
         function updateHWFilters(form) {
             var hwaccel_field = form.findField('hwaccel');
+            var deinterlace_field = form.findField('deinterlace');
             form.findField('hw_denoise').setDisabled(!hwaccel_field.getValue());
             form.findField('hw_sharpness').setDisabled(!hwaccel_field.getValue());
+            form.findField('deinterlace_vaapi_method').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_rate').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_auto').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
         }
 
         function checkBFrameQuality(low_power_field, desired_b_depth_field, b_reference_field, quality_field) {
@@ -904,8 +916,12 @@ var codec_profile_forms = {
     'codec_profile_vaapi_vp9': function(form) {
         function updateHWFilters(form) {
             var hwaccel_field = form.findField('hwaccel');
+            var deinterlace_field = form.findField('deinterlace');
             form.findField('hw_denoise').setDisabled(!hwaccel_field.getValue());
             form.findField('hw_sharpness').setDisabled(!hwaccel_field.getValue());
+            form.findField('deinterlace_vaapi_method').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_rate').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
+            form.findField('deinterlace_vaapi_auto').setDisabled(!hwaccel_field.getValue() || !deinterlace_field.getValue());
         }
 
         function checkBFrameQuality(low_power_field, desired_b_depth_field, b_reference_field, quality_field) {
