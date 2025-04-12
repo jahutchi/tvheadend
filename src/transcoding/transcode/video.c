@@ -336,9 +336,11 @@ tvh_video_context_open(TVHContext *self, TVHOpenPhase phase, AVDictionary **opts
 static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
-    //TODO: only run this when a field-based deint is selected
+    //TODO: only run the next 2 lines when a field-based deint is selected
     avframe->duration = avframe->duration / 2;
     avframe->pts = avframe->pts / 2;
+
+    avframe->pkt_dts = avframe->pts;
     tvh_context_log(self, LOG_DEBUG, "Frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
                                      avframe->pts, avframe->pkt_dts, avframe->duration);
     if (avframe->pts == AV_NOPTS_VALUE) {
