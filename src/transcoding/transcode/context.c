@@ -370,7 +370,14 @@ tvh_context_encode_frame(TVHContext *self, AVFrame *avframe)
 {
     int ret = -1;
 
+    if (!self || !self->oavctx) {
+        tvherror(LS_TRANSCODE, "NULL context in avcodec_send_frame (self=%p, oavctx=%p)", self, self ? self->oavctx : NULL);
+    }
+
     if (!(ret = avframe ? _context_encode(self, avframe) : 0)) {
+      if (!self || !self->oavctx) {
+          tvherror(LS_TRANSCODE, "NULL context in avcodec_send_frame 2 (self=%p, oavctx=%p)", self, self ? self->oavctx : NULL);
+      }
         while ((ret = avcodec_send_frame(self->oavctx, avframe)) == AVERROR(EAGAIN)) {
             if ((ret = tvh_context_receive_packet(self))) {
                 break;
