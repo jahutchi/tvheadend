@@ -370,7 +370,14 @@ tvh_context_encode_frame(TVHContext *self, AVFrame *avframe)
 {
     int ret = -1;
 
+    if (!self || !self->oavctx) {
+        tvherror(LS_TRANSCODE, "NULL context in avcodec_send_frame (self=%p, oavctx=%p)", self, self ? self->oavctx : NULL);
+    }
+
     if (!(ret = avframe ? _context_encode(self, avframe) : 0)) {
+      if (!self || !self->oavctx) {
+          tvherror(LS_TRANSCODE, "NULL context in avcodec_send_frame 2 (self=%p, oavctx=%p)", self, self ? self->oavctx : NULL);
+      }
         while ((ret = avcodec_send_frame(self->oavctx, avframe)) == AVERROR(EAGAIN)) {
             if ((ret = tvh_context_receive_packet(self))) {
                 break;
@@ -438,7 +445,11 @@ tvh_context_receive_frame(TVHContext *self, AVFrame *avframe)
     int ret = -1;
 
     while ((ret = avcodec_receive_frame(self->iavctx, avframe)) != AVERROR(EAGAIN)) {
+        if (ret) {
+            tvh_context_log(self, LOG_WARNING, "avcodec_receive_frame returned non-zero error code=%d", ret);
+        }
         if (ret || (ret = tvh_context_encode(self, avframe))) {
+            tvh_context_log(self, LOG_WARNING, "ret code from tvh_context_encode=%d", ret);
             break;
         }
     }
@@ -452,12 +463,17 @@ tvh_context_decode_packet(TVHContext *self, const AVPacket *avpkt)
     int ret = -1;
 
     while ((ret = avcodec_send_packet(self->iavctx, avpkt)) == AVERROR(EAGAIN)) {
+        tvh_context_log(self, LOG_WARNING, "avcodec_send_packet returned eagain ret=%d", ret);
         if ((ret = tvh_context_receive_frame(self, self->iavframe))) {
+            tvh_context_log(self, LOG_WARNING, "tvh_context_receive_frame1 returned %d", ret);
             break;
         }
     }
     if (!ret) {
         ret = tvh_context_receive_frame(self, self->iavframe);
+        if (ret)
+            tvh_context_log(self, LOG_WARNING, "tvh_context_receive_frame2 returned %d", ret);
+
     }
     return (ret == AVERROR_EOF) ? 0 : ret;
 }
@@ -467,12 +483,31 @@ static int
 tvh_context_decode(TVHContext *self, AVPacket *avpkt)
 {
     int ret = 0;
+    int opened_decoder = 0;
 
     if (!avcodec_is_open(self->iavctx)) {
+        tvh_context_log(self, LOG_DEBUG, "tvh_context_decode: opening decoder");
         ret = tvh_context_open(self, OPEN_DECODER);
+        if (ret) {
+            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failed to open decoder ret=%d", ret);
+        } else {
+            opened_decoder = 1;
+        }
     }
-    if (!ret && !(ret = _context_decode(self, avpkt))) {
-        ret = tvh_context_decode_packet(self, avpkt);
+
+    if (!ret) {
+        ret = _context_decode(self, avpkt);
+        if (ret) {
+            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in _context_decode ret=%d", ret);
+        } else {
+            ret = tvh_context_decode_packet(self, avpkt);
+            if (ret) {
+                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in tvh_context_decode_packet ret=%d", ret);
+            }
+        }
+    }
+    if (ret && opened_decoder) {
+        tvh_context_log(self, LOG_ERR, "tvh_context_decode: the error occured straight after opening the decoder ret=%d", ret);
     }
     return (ret == AVERROR(EAGAIN) || ret == AVERROR_INVALIDDATA || ret == AVERROR(EIO)) ? 0 : ret;
 }
@@ -719,6 +754,9 @@ tvh_context_handle(TVHContext *self, th_pkt_t *pkt)
                 avpkt.duration = pkt->pkt_duration;
                 TVHPKT_SET(self->src_pkt, pkt);
                 ret = tvh_context_decode(self, &avpkt);
+                if (ret) {
+                    tvh_context_log(self, LOG_ERR, "tvh_context_handle error code=%d", ret);
+                }
                 av_packet_unref(&avpkt); // will free data
             }
         }
