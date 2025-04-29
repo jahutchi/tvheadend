@@ -1,0 +1,61 @@
+From 550c662a1f94ddcd8d91f9874edc4b68d73fa7c7 Mon Sep 17 00:00:00 2001
+From: llyyr <llyyr.public@gmail.com>
+Date: Mon, 27 May 2024 18:52:31 +0530
+Subject: [PATCH] avformat/mpegts: correctly skip TP_extra_header in m2ts
+
+instead of just resyncing and skipping a bunch of TS packets, leading to
+a loss of frames.
+
+Before this, a stray byte with the value of 0x47 in TP_extra_header
+would throw off the detection of where TS packets start.
+
+A typical file that could cause issues would look like this:
+
+    00000300: 238f 4780 4750 1110 0000 01e0 0000 84c0
+                   ^^   ^^
+The first four bytes here are TP_extra_header and the actual TS packet
+starts at offset 0x304
+
+FFmpeg would try to read a packet at 0x300 but since nothing skips the
+4 byte TP_extra_header, find that the first byte is not 0x47 and
+immediately go into mpegts_resync, and incorrectly detect the stray 0x47
+in the TP_extra_header at 0x302 as the new sync byte.
+
+Fix this by correctly skipping the first 4 bytes if the source packet
+is 192 bytes.
+
+Signed-off-by: llyyr <llyyr.public@gmail.com>
+Signed-off-by: Hendrik Leppkes <h.leppkes@gmail.com>
+---
+ libavformat/mpegts.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+diff --urN ../ffmpeg-6.1.1/libavformat/mpegts.c ./libavformat/mpegts.c
+--- ../ffmpeg-6.1.1/libavformat/mpegts.c
++++ ./libavformat/mpegts.c
+@@ -2945,6 +2945,12 @@ static int read_packet(AVFormatContext *s, uint8_t *buf, int raw_packet_size,
+     AVIOContext *pb = s->pb;
+     int len;
+ 
++    // 192 bytes source packet that start with a 4 bytes TP_extra_header
++    // followed by 188 bytes of TS packet. The sync byte is at offset 4, so skip
++    // the first 4 bytes otherwise we'll end up syncing to the wrong packet.
++    if (raw_packet_size == TS_DVHS_PACKET_SIZE)
++        avio_skip(pb, 4);
++
+     for (;;) {
+         len = ffio_read_indirect(pb, buf, TS_PACKET_SIZE, data);
+         if (len != TS_PACKET_SIZE)
+@@ -2967,7 +2973,11 @@ static int read_packet(AVFormatContext *s, uint8_t *buf, int raw_packet_size,
+ static void finished_reading_packet(AVFormatContext *s, int raw_packet_size)
+ {
+     AVIOContext *pb = s->pb;
+-    int skip = raw_packet_size - TS_PACKET_SIZE;
++    int skip;
++    if (raw_packet_size == TS_DVHS_PACKET_SIZE)
++        skip = raw_packet_size - TS_DVHS_PACKET_SIZE;
++    else
++        skip = raw_packet_size - TS_PACKET_SIZE;
+     if (skip > 0)
+         avio_skip(pb, skip);
+ }
