@@ -173,6 +173,14 @@ _context_open(TVHContext *self, TVHOpenPhase phase, AVDictionary **opts)
 static int
 _context_decode(TVHContext *self, AVPacket *avpkt)
 {
+    // dont send packets earlier than the first I-frame sent to the decoder
+    // avoids hardware decoder errors when late frames encountered
+    if (avpkt->pts != AV_NOPTS_VALUE &&
+        self->decoder_start_pts != AV_NOPTS_VALUE &&
+        avpkt->pts < self->decoder_start_pts) {
+        tvh_context_log(self, LOG_DEBUG, "Skipping late packet: pts=%"PRId64" < decoder_start_pts=%"PRId64, avpkt->pts, self->decoder_start_pts);
+        return AVERROR(EAGAIN);
+    }
     return (self->type->decode) ? self->type->decode(self, avpkt) : 0;
 }
 
@@ -478,10 +486,10 @@ static int
 tvh_context_decode(TVHContext *self, AVPacket *avpkt)
 {
     int ret = 0;
-    int opened_decoder = 0;
 
     if (!avcodec_is_open(self->iavctx)) {
         // Wait for the first keyframe before opening the decoder and continuing
+        self->decoder_start_pts = AV_NOPTS_VALUE;
         if (!(avpkt->flags & AV_PKT_FLAG_KEY)) {
             tvh_context_log(self, LOG_DEBUG, "tvh_context_decode: skipping non-keyframe before opening decoder, pts=%"PRId64, avpkt->pts);
             ret = AVERROR(EAGAIN);
@@ -491,7 +499,7 @@ tvh_context_decode(TVHContext *self, AVPacket *avpkt)
             if (ret) {
                 tvh_context_log(self, LOG_ERR, "tvh_context_decode: failed to open decoder ret=%d", ret);
             } else {
-                opened_decoder = 1;
+                self->decoder_start_pts = avpkt->pts;
             }
         }
     }
@@ -499,11 +507,11 @@ tvh_context_decode(TVHContext *self, AVPacket *avpkt)
     if (!ret) {
         ret = _context_decode(self, avpkt);
         if (ret) {
-            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in _context_decode ret=%d opened_decoder=%d", ret, opened_decoder);
+            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in _context_decode ret=%d", ret);
         } else {
             ret = tvh_context_decode_packet(self, avpkt);
             if (ret) {
-                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in tvh_context_decode_packet ret=%d opened_decoder=%d", ret, opened_decoder);
+                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in tvh_context_decode_packet ret=%d", ret);
             }
         }
     }

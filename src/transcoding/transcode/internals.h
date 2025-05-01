@@ -165,6 +165,7 @@ struct tvh_context {
     int require_meta;
     int64_t pts;
     int field_rate;
+    int64_t decoder_start_pts;
     // only for audio
     int64_t duration;
     int64_t delta;
