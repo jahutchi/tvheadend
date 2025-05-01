@@ -750,6 +750,7 @@ tvh_context_handle(TVHContext *self, th_pkt_t *pkt)
                 avpkt.pts = pkt->pkt_pts;
                 avpkt.dts = pkt->pkt_dts;
                 avpkt.duration = pkt->pkt_duration;
+                avpkt.flags = (pkt->v.pkt_frametype == PKT_I_FRAME) ? AV_PKT_FLAG_KEY : 0;
                 TVHPKT_SET(self->src_pkt, pkt);
                 ret = tvh_context_decode(self, &avpkt);
                 if (ret) {
