@@ -481,28 +481,31 @@ tvh_context_decode(TVHContext *self, AVPacket *avpkt)
     int opened_decoder = 0;
 
     if (!avcodec_is_open(self->iavctx)) {
-        tvh_context_log(self, LOG_DEBUG, "tvh_context_decode: opening decoder");
-        ret = tvh_context_open(self, OPEN_DECODER);
-        if (ret) {
-            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failed to open decoder ret=%d", ret);
+        // Wait for the first keyframe before opening the decoder and continuing
+        if (!(avpkt->flags & AV_PKT_FLAG_KEY)) {
+            tvh_context_log(self, LOG_DEBUG, "tvh_context_decode: skipping non-keyframe before opening decoder, pts=%"PRId64, avpkt->pts);
+            ret = AVERROR(EAGAIN);
         } else {
-            opened_decoder = 1;
+            tvh_context_log(self, LOG_DEBUG, "tvh_context_decode: opening decoder with packet at pts =%"PRId64, avpkt->pts);
+            ret = tvh_context_open(self, OPEN_DECODER);
+            if (ret) {
+                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failed to open decoder ret=%d", ret);
+            } else {
+                opened_decoder = 1;
+            }
         }
     }
 
     if (!ret) {
         ret = _context_decode(self, avpkt);
         if (ret) {
-            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in _context_decode ret=%d", ret);
+            tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in _context_decode ret=%d opened_decoder=%d", ret, opened_decoder);
         } else {
             ret = tvh_context_decode_packet(self, avpkt);
             if (ret) {
-                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in tvh_context_decode_packet ret=%d", ret);
+                tvh_context_log(self, LOG_ERR, "tvh_context_decode: failure in tvh_context_decode_packet ret=%d opened_decoder=%d", ret, opened_decoder);
             }
         }
-    }
-    if (ret && opened_decoder) {
-        tvh_context_log(self, LOG_ERR, "tvh_context_decode: the error occured straight after opening the decoder ret=%d", ret);
     }
     return (ret == AVERROR(EAGAIN) || ret == AVERROR_INVALIDDATA) ? 0 : ret;
 }
