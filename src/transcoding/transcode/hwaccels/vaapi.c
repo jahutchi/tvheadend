@@ -165,6 +165,7 @@ tvhva_context_display(TVHVAContext *self, AVCodecContext *avctx)
 {
     TVHContext *ctx = avctx->opaque;
     AVHWDeviceContext *hw_device_ctx = NULL;
+    AVVAAPIDeviceContext *vaapi_ctx = NULL;
 
     if (!ctx->hw_device_ref &&
         !(ctx->hw_device_ref = tvhva_init(ctx->hw_accel_device))) {
@@ -174,7 +175,12 @@ tvhva_context_display(TVHVAContext *self, AVCodecContext *avctx)
         return NULL;
     }
     hw_device_ctx = (AVHWDeviceContext*)self->hw_device_ref->data;
-    return ((AVVAAPIDeviceContext *)hw_device_ctx->hwctx)->display;
+    vaapi_ctx = (AVVAAPIDeviceContext *)hw_device_ctx->hwctx;
+
+    // Set FFMpeg VAAPI driver quirk to ensure render param buffers are cleared
+    vaapi_ctx->driver_quirks = AV_VAAPI_DRIVER_QUIRK_RENDER_PARAM_BUFFERS;
+
+    return vaapi_ctx->display;
 }
 
 
