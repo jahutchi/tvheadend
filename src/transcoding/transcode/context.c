@@ -471,12 +471,17 @@ tvh_context_decode_packet(TVHContext *self, const AVPacket *avpkt)
     int ret = -1;
 
     while ((ret = avcodec_send_packet(self->iavctx, avpkt)) == AVERROR(EAGAIN)) {
+        tvh_context_log(self, LOG_WARNING, "avcodec_send_packet returned eagain ret=%d", ret);
         if ((ret = tvh_context_receive_frame(self, self->iavframe))) {
+            tvh_context_log(self, LOG_WARNING, "tvh_context_receive_frame1 returned %d", ret);
             break;
         }
     }
     if (!ret) {
         ret = tvh_context_receive_frame(self, self->iavframe);
+        if (ret)
+            tvh_context_log(self, LOG_WARNING, "tvh_context_receive_frame2 returned %d", ret);
+
     }
     return (ret == AVERROR_EOF) ? 0 : ret;
 }
