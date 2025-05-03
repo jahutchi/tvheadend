@@ -520,7 +520,7 @@ tvh_context_decode(TVHContext *self, AVPacket *avpkt)
             }
         }
     }
-    return (ret == AVERROR(EAGAIN) || ret == AVERROR_INVALIDDATA) ? 0 : ret;
+    return (ret == AVERROR(EAGAIN) || ret == AVERROR_INVALIDDATA || ret == AVERROR(EIO)) ? 0 : ret;
 }
 
 
