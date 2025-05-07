@@ -1,0 +1,19 @@
+diff --urN ../ffmpeg-6.1.1/libavcodec/mpeg12dec.c ./libavcodec/mpeg12dec.c
+--- ../ffmpeg-6.1.1/libavcodec/mpeg12dec.c
++++ ./libavcodec/mpeg12dec.c
+@@ -1614,6 +1614,7 @@ static int mpeg_field_start(MpegEncContext *s, const uint8_t *buf, int buf_size)
+             return AVERROR_INVALIDDATA;
+         }
+ 
++        /*
+         if (s->avctx->hwaccel) {
+             if ((ret = FF_HW_SIMPLE_CALL(s->avctx, end_frame)) < 0) {
+                 av_log(avctx, AV_LOG_ERROR,
+@@ -1621,6 +1622,7 @@ static int mpeg_field_start(MpegEncContext *s, const uint8_t *buf, int buf_size)
+                 return ret;
+             }
+         }
++        */
+ 
+         for (i = 0; i < 4; i++) {
+             s->current_picture.f->data[i] = s->current_picture_ptr->f->data[i];
