@@ -314,10 +314,17 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
 static int
 tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
 {
+    tvh_context_log(self, LOG_TRACE, "Incoming audio frame from decoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d)",
+                                     avframe->pts, avframe->pkt_dts, avframe->nb_samples);
+
     avframe->nb_samples = self->oavctx->frame_size;
     avframe->pts = self->pts;
     self->pts += self->delta;
     self->duration -= self->delta;
+
+    tvh_context_log(self, LOG_TRACE, "Audio frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d) delta (%"PRId64")",
+                                     avframe->pts, avframe->pkt_dts, avframe->nb_samples, self->delta);
+
     return 0;
 }
 
