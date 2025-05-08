@@ -300,9 +300,10 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
 
     // rounding error?
     if (new_pts - 10 <= prev_pts && new_pts + 10 >= prev_pts) {
+      tvh_context_log(self, LOG_WARNING, "Setting prev_pts (%"PRId64") to new_pts (%"PRId64")", prev_pts, new_pts);
       prev_pts = new_pts;
     }
-
+    tvh_context_log(self, LOG_WARNING, "Setting self->pts to new_pts value (%"PRId64")", new_pts);
     if (prev_pts != (self->pts = new_pts) && prev_pts > 12000) {
         tvh_context_log(self, LOG_WARNING, "Detected framedrop in audio (%"PRId64" != %"PRId64")", prev_pts, new_pts);
     }
