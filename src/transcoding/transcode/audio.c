@@ -359,6 +359,10 @@ tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
 static int
 tvh_audio_context_ship(TVHContext *self, AVPacket *avpkt)
 {
+    tvh_context_log(self, LOG_TRACE,
+                    "shipping pkt : pts (%"PRId64")  duration (%"PRId64")",
+                    avpkt->pts, avpkt->duration);
+
     return (avpkt->pts >= 0);
 }
 
