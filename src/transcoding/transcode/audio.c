@@ -332,7 +332,7 @@ tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
     if (avframe->nb_samples > 0 && avframe->sample_rate > 0) {
         frame_duration = av_rescale_q(avframe->nb_samples,
                                        (AVRational){1, avframe->sample_rate},
-                                       self->oavctx->time_base);
+                                       self->iavctx->time_base);
     }
 
     if (frame_duration != avframe->duration) {
