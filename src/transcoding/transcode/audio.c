@@ -316,7 +316,7 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
 static int
 tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
 {
-    int64_t frame_duration = avframe->pkt_duration; // fallback
+    int64_t frame_duration = avframe->duration; // fallback
 
     tvh_context_log(self, LOG_TRACE, "Incoming audio frame from decoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d)",
                                      avframe->pts, avframe->pkt_dts, avframe->nb_samples);
@@ -335,10 +335,10 @@ tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
                                        self->oavctx->time_base);
     }
 
-    if (frame_duration != avframe->pkt_duration) {
+    if (frame_duration != avframe->duration) {
         tvh_context_log(self, LOG_DEBUG,
-            "Frame duration corrected to (%"PRId64") which differs from pkt_duration (%"PRId64")",
-            frame_duration, avframe->pkt_duration);
+            "duration corrected to (%"PRId64") which differs from decoded frame duration (%"PRId64")",
+            frame_duration, avframe->duration);
     }
 
     // Add computed frame duration to running total, then remove delta to align encoder PTS
