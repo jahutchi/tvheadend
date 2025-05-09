@@ -307,7 +307,7 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
     if (prev_pts != (self->pts = new_pts) && prev_pts > 12000) {
         tvh_context_log(self, LOG_WARNING, "Detected framedrop in audio (%"PRId64" != %"PRId64")", prev_pts, new_pts);
     }
-    self->duration += avpkt->duration;
+
     tvh_context_log(self, LOG_TRACE, "increased self->duration to (%"PRId64") avpkt->duration was (%"PRId64")", self->duration, avpkt->duration);
     return 0;
 }
@@ -316,16 +316,41 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
 static int
 tvh_audio_context_encode(TVHContext *self, AVFrame *avframe)
 {
+    int64_t frame_duration = avframe->pkt_duration; // fallback
+
     tvh_context_log(self, LOG_TRACE, "Incoming audio frame from decoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d)",
                                      avframe->pts, avframe->pkt_dts, avframe->nb_samples);
 
-    avframe->nb_samples = self->oavctx->frame_size;
+    if (self->oavctx->frame_size > 0 && avframe->nb_samples != self->oavctx->frame_size) {
+        tvh_context_log(self, LOG_DEBUG,
+            "Encoder expects %d samples, but got %d — adjusting nb_samples to match encoder frame size",
+            self->oavctx->frame_size, avframe->nb_samples);
+        avframe->nb_samples = self->oavctx->frame_size;
+    }
+
+    // Accurately calculate duration of this sample
+    if (avframe->nb_samples > 0 && avframe->sample_rate > 0) {
+        frame_duration = av_rescale_q(avframe->nb_samples,
+                                       (AVRational){1, avframe->sample_rate},
+                                       self->oavctx->time_base);
+    }
+
+    if (frame_duration != avframe->pkt_duration) {
+        tvh_context_log(self, LOG_DEBUG,
+            "Frame duration corrected to (%"PRId64") which differs from pkt_duration (%"PRId64")",
+            frame_duration, avframe->pkt_duration);
+    }
+
+    // Add computed frame duration to running total, then remove delta to align encoder PTS
+    // Assumes encoder delta is correctly precomputed to match expected frame spacing
+    self->duration += frame_duration;
     avframe->pts = self->pts;
     self->pts += self->delta;
     self->duration -= self->delta;
 
-    tvh_context_log(self, LOG_TRACE, "Audio frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d) delta (%"PRId64")",
-                                     avframe->pts, avframe->pkt_dts, avframe->nb_samples, self->delta);
+    tvh_context_log(self, LOG_TRACE,
+                    "Audio frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") nb_samples (%d) delta (%"PRId64") duration (%"PRId64")",
+                    avframe->pts, avframe->pkt_dts, avframe->nb_samples, self->delta, frame_duration);
 
     return 0;
 }
