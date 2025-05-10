@@ -133,13 +133,17 @@ tvh_stream_stop(TVHStream *self, int flush)
 int
 tvh_stream_handle(TVHStream *self, th_pkt_t *pkt)
 {
-    tvh_stream_log(self, LOG_ERR, "tvh_stream_handle found packet at pts (%"PRId64")", pkt->pkt_pts);
+    char buf[128];
     if (pkt->pkt_payload && self->context) {
         return (tvh_context_handle(self->context, pkt) < 0) ? -1 : 0;
     }
     pkt_ref_inc(pkt);
     if (!pkt->pkt_payload) {
         tvh_stream_log(self, LOG_ERR, "tvh_stream_handle found packet without payload at pts (%"PRId64")", pkt->pkt_pts);
+    }
+    if (tvhtrace_enabled()) {
+        snprintf(buf, sizeof(buf), "delivering packet at pts (%"PRId64")", pkt->pkt_pts);
+        pkt_trace(LS_TRANSCODE, pkt, buf);
     }
     return tvh_transcoder_deliver(self->transcoder, pkt);
 }
