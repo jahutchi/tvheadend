@@ -138,7 +138,7 @@ tvh_stream_handle(TVHStream *self, th_pkt_t *pkt)
     }
     pkt_ref_inc(pkt);
     if (!pkt->pkt_payload) {
-        tvh_stream_log(self, LOG_ERR, "tvh_stream_handle found packet without payload at pts (%"PRId64")", pkt->pts);
+        tvh_stream_log(self, LOG_ERR, "tvh_stream_handle found packet without payload at pts (%"PRId64")", pkt->pkt_pts);
     }
     return tvh_transcoder_deliver(self->transcoder, pkt);
 }
