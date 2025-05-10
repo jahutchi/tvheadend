@@ -304,8 +304,12 @@ tvh_audio_context_decode(TVHContext *self, AVPacket *avpkt)
       prev_pts = new_pts;
     }
     tvh_context_log(self, LOG_TRACE, "Setting self->pts (%"PRId64") to new_pts value (%"PRId64") self->duration was (%"PRId64")", self->pts, new_pts, self->duration);
-    if (prev_pts != (self->pts = new_pts) && prev_pts > 12000) {
-        tvh_context_log(self, LOG_WARNING, "Detected framedrop in audio (%"PRId64" != %"PRId64")", prev_pts, new_pts);
+    self->pts = new_pts;
+    if (prev_pts != new_pts) && prev_pts > 12000) {
+      tvh_context_log(self, LOG_WARNING, "Detected framedrop in audio (%"PRId64" != %"PRId64")", prev_pts, new_pts);
+      if (new_pts <= prev_pts) {
+        return AVERROR(EAGAIN);
+      }
     }
 
     tvh_context_log(self, LOG_TRACE, "increased self->duration to (%"PRId64") avpkt->duration was (%"PRId64")", self->duration, avpkt->duration);
