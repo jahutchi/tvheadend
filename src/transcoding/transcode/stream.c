@@ -133,6 +133,7 @@ tvh_stream_stop(TVHStream *self, int flush)
 int
 tvh_stream_handle(TVHStream *self, th_pkt_t *pkt)
 {
+    tvh_stream_log(self, LOG_ERR, "tvh_stream_handle found packet at pts (%"PRId64")", pkt->pkt_pts);
     if (pkt->pkt_payload && self->context) {
         return (tvh_context_handle(self->context, pkt) < 0) ? -1 : 0;
     }
