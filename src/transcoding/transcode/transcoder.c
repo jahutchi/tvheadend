@@ -95,7 +95,7 @@ tvh_transcoder_handle(TVHTranscoder *self, th_pkt_t *pkt)
         if (pkt->pkt_componentindex == stream->index) {
             err = tvh_stream_handle(stream, pkt);
             if (err) {
-                tvh_stream_stop(stream, 0);
+                //tvh_stream_stop(stream, 0);
                 if (av_strerror(err, averr_buf, sizeof(averr_buf)) < 0) {
                     snprintf(averr_buf, sizeof(averr_buf), "unknown error");
                 }
