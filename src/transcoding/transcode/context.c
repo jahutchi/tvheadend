@@ -370,6 +370,9 @@ tvh_context_encode_frame(TVHContext *self, AVFrame *avframe)
 {
     int ret = -1;
 
+    if (!self->oavctx) {
+        return ret;
+    }
     if (!(ret = avframe ? _context_encode(self, avframe) : 0)) {
         while ((ret = avcodec_send_frame(self->oavctx, avframe)) == AVERROR(EAGAIN)) {
             if ((ret = tvh_context_receive_packet(self))) {
@@ -451,6 +454,9 @@ tvh_context_decode_packet(TVHContext *self, const AVPacket *avpkt)
 {
     int ret = -1;
 
+    if (!self->iavctx) {
+        return ret;
+    }
     while ((ret = avcodec_send_packet(self->iavctx, avpkt)) == AVERROR(EAGAIN)) {
         if ((ret = tvh_context_receive_frame(self, self->iavframe))) {
             break;
