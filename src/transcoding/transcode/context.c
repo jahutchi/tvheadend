@@ -413,6 +413,9 @@ tvh_context_encode(TVHContext *self, AVFrame *avframe)
 {
     int ret = 0;
 
+    if (avframe)
+        return 0;
+
     if (!avcodec_is_open(self->oavctx)) {
         ret = tvh_context_open(self, OPEN_ENCODER);
     }
