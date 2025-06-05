@@ -3003,11 +3003,15 @@ htsp_method_file_read(htsp_connection_t *htsp, htsmsg_t *in)
   int64_t size;
   int fd;
 
-  if(hf == NULL)
+  if(hf == NULL) {
+    tvherror(LS_HTSP, "fileRead failed: Invalid file", e);
     return htsp_error(htsp, N_("Invalid file"));
+  }
 
-  if(htsmsg_get_s64(in, "size", &size))
+  if(htsmsg_get_s64(in, "size", &size)) {
+    tvherror(LS_HTSP, "fileRead failed: Invlalid parameters", e);
     return htsp_error(htsp, N_("Invalid parameters"));
+  }
 
   fd = hf->hf_fd;
 
@@ -3041,7 +3045,8 @@ htsp_method_file_read(htsp_connection_t *htsp, htsmsg_t *in)
 
 error:
   tvh_mutex_lock(&global_lock);
-  tvherror(LS_HTSP, "fileRead failed: %s", e);
+  if (e)
+    tvherror(LS_HTSP, "fileRead failed: %s", e);
   return e ? htsp_error(htsp, e) : rep;
 }
 
