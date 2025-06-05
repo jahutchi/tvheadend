@@ -3041,6 +3041,7 @@ htsp_method_file_read(htsp_connection_t *htsp, htsmsg_t *in)
 
 error:
   tvh_mutex_lock(&global_lock);
+  tvherror(LS_HTSP, "fileRead failed: %s", e);
   return e ? htsp_error(htsp, e) : rep;
 }
 
