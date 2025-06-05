@@ -3004,12 +3004,12 @@ htsp_method_file_read(htsp_connection_t *htsp, htsmsg_t *in)
   int fd;
 
   if(hf == NULL) {
-    tvherror(LS_HTSP, "fileRead failed: Invalid file", e);
+    tvherror(LS_HTSP, "fileRead failed: Invalid file");
     return htsp_error(htsp, N_("Invalid file"));
   }
 
   if(htsmsg_get_s64(in, "size", &size)) {
-    tvherror(LS_HTSP, "fileRead failed: Invlalid parameters", e);
+    tvherror(LS_HTSP, "fileRead failed: Invlalid parameters");
     return htsp_error(htsp, N_("Invalid parameters"));
   }
 
