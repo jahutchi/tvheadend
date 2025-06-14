@@ -351,48 +351,12 @@ tvh_video_context_open(TVHContext *self, TVHOpenPhase phase, AVDictionary **opts
 static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
-    int64_t expected_duration = self->oavctx->ticks_per_frame;
-
-    tvh_context_log(self, LOG_TRACE, "Incoming decoded frame : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
-                                     avframe->pts, avframe->pkt_dts, avframe->duration);
-
-    // Ensure valid PTS before manipulation
-    if (avframe->pts == AV_NOPTS_VALUE) {
-        avframe->pts = avframe->best_effort_timestamp;
-        tvh_context_log(self, LOG_TRACE, "Frame had invalid/unset pts, using best_effort_timestamp (%"PRId64")", avframe->pts);
-    }
-
-    if (avframe->duration <= 0) {
-        avframe->duration = expected_duration;
-        tvh_context_log(self, LOG_TRACE, "Frame had invalid duration, setting to default (%"PRId64")", avframe->duration);
-    }
-
-    // Detect field-based deinterlace via doubled input frame duration and field_rate config.
-    // Ensures progressive streams with field_rate=2 are not misadjusted.
-    if (self->field_rate == 2 && avframe->pts != AV_NOPTS_VALUE &&
-        avframe->duration == (expected_duration * self->field_rate))
-    {
-        avframe->pts /= self->field_rate;
-        avframe->duration = expected_duration;
-    }
-
-    if (avframe->duration != expected_duration) {
-        tvh_context_log(self, LOG_WARNING, "Frame at pts %"PRId64" has unusual duration - expected %"PRId64" but got %"PRId64,
-                                         avframe->pts, expected_duration, avframe->duration);
-    }
-
-    // Always sync DTS with PTS to maintain timeline consistency
-    avframe->pkt_dts = avframe->pts;
-
     if (avframe->pts <= self->pts) {
         tvh_context_log(self, LOG_WARNING,
                         "Invalid pts (%"PRId64") <= last (%"PRId64"), dropping frame",
                         avframe->pts, self->pts);
         return AVERROR(EAGAIN);
     }
-    tvh_context_log(self, LOG_TRACE, "Frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
-                                     avframe->pts, avframe->pkt_dts, avframe->duration);
-
     self->pts = avframe->pts;
 #if LIBAVUTIL_VERSION_MAJOR > 58 || (LIBAVUTIL_VERSION_MAJOR == 58 && LIBAVUTIL_VERSION_MINOR > 2)
     if (avframe->flags & AV_FRAME_FLAG_INTERLACED) {
@@ -422,6 +386,27 @@ tvh_video_context_ship(TVHContext *self, AVPacket *avpkt)
         tvh_context_log(self, LOG_ERR, "encode failed");
         return -1;
     }
+
+    // If a filter was used (e.g. deinterlace) then rescale packet PTS/DTS/Duration to output time base
+    if (self && self->oavctx && self->oavfltctx && self->oavfltctx->inputs[0] &&
+        self->oavfltctx->inputs[0]->time_base.den) {
+
+        tvh_context_log(self, LOG_TRACE,
+          "Rescaling packet pts/dts from filter time base {%d/%d} to output time base {%d/%d}",
+          self->oavfltctx->inputs[0]->time_base.num, self->oavfltctx->inputs[0]->time_base.den,
+          self->oavctx->time_base.num, self->oavctx->time_base.den);
+
+        tvh_context_log(self, LOG_TRACE,
+          "  before rescale: pts=%" PRId64 ", dts=%" PRId64,
+          avpkt->pts, avpkt->dts);
+
+        av_packet_rescale_ts(avpkt, self->oavfltctx->inputs[0]->time_base, self->oavctx->time_base);
+
+        tvh_context_log(self, LOG_TRACE,
+          "  after rescale: pts=%" PRId64 ", dts=%" PRId64,
+          avpkt->pts, avpkt->dts);
+    }
+
     return avpkt->size;
 }
 
