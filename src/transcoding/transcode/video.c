@@ -352,9 +352,17 @@ static int
 tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 {
     int64_t expected_duration = self->oavctx->ticks_per_frame;
+    int64_t *frame_duration;
+
+// Use correct duration field depending on FFmpeg version
+#if LIBAVUTIL_VERSION_MAJOR >= 58
+    frame_duration = &avframe->duration;
+#else
+    frame_duration = &avframe->pkt_duration;
+#endif
 
     tvh_context_log(self, LOG_TRACE, "Incoming decoded frame : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
-                                     avframe->pts, avframe->pkt_dts, avframe->duration);
+                                     avframe->pts, avframe->pkt_dts, *frame_duration);
 
     // Ensure valid PTS before manipulation
     if (avframe->pts == AV_NOPTS_VALUE) {
@@ -362,23 +370,23 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         tvh_context_log(self, LOG_TRACE, "Frame had invalid/unset pts, using best_effort_timestamp (%"PRId64")", avframe->pts);
     }
 
-    if (avframe->duration <= 0) {
-        avframe->duration = expected_duration;
-        tvh_context_log(self, LOG_TRACE, "Frame had invalid duration, setting to default (%"PRId64")", avframe->duration);
+    if (*frame_duration <= 0) {
+        *frame_duration = expected_duration;
+        tvh_context_log(self, LOG_TRACE, "Frame had invalid duration, setting to default (%"PRId64")", *frame_duration);
     }
 
     // Detect field-based deinterlace via doubled input frame duration and field_rate config.
     // Ensures progressive streams with field_rate=2 are not misadjusted.
     if (self->field_rate == 2 && avframe->pts != AV_NOPTS_VALUE &&
-        avframe->duration == (expected_duration * self->field_rate))
+        *frame_duration == (expected_duration * self->field_rate))
     {
         avframe->pts /= self->field_rate;
-        avframe->duration = expected_duration;
+        *frame_duration = expected_duration;
     }
 
-    if (avframe->duration != expected_duration) {
+    if (*frame_duration != expected_duration) {
         tvh_context_log(self, LOG_WARNING, "Frame at pts %"PRId64" has unusual duration - expected %"PRId64" but got %"PRId64,
-                                         avframe->pts, expected_duration, avframe->duration);
+                                         avframe->pts, expected_duration, *frame_duration);
     }
 
     // Always sync DTS with PTS to maintain timeline consistency
@@ -391,7 +399,7 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         return AVERROR(EAGAIN);
     }
     tvh_context_log(self, LOG_TRACE, "Frame for encoder : pts (%"PRId64") pkt_dts (%"PRId64") duration (%"PRId64")",
-                                     avframe->pts, avframe->pkt_dts, avframe->duration);
+                                     avframe->pts, avframe->pkt_dts, *frame_duration);
 
     self->pts = avframe->pts;
 #if LIBAVUTIL_VERSION_MAJOR > 58 || (LIBAVUTIL_VERSION_MAJOR == 58 && LIBAVUTIL_VERSION_MINOR > 2)
