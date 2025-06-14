@@ -157,7 +157,7 @@ hwaccels_get_scale_filter(AVCodecContext *iavctx, AVCodecContext *oavctx,
 int
 hwaccels_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter, size_t filter_len)
 {
-    TVHContext *ctx = avctx->opaque;
+    const TVHContext *ctx = avctx->opaque;
 
     if (ctx->hw_accel_ictx) {
         switch (avctx->pix_fmt) {

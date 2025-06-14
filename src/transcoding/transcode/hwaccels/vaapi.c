@@ -697,7 +697,7 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
 {
     int mode = 0;
     int auto_enable = 0;
-    TVHContext *ctx = avctx->opaque;
+    const TVHContext *ctx = avctx->opaque;
 
     if (ctx->field_rate < 1 ||
         tvh_context_get_int_opt(opts, "deinterlace_vaapi_mode", &mode) ||
