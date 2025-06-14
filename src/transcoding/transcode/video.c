@@ -360,7 +360,6 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 #define FRAME_DURATION(f) ((f)->pkt_duration)
 #endif
 
-    avframe->pts = avframe->best_effort_timestamp;
     int64_t expected_duration = self->oavctx->ticks_per_frame;
 
     tvh_context_log(self, LOG_TRACE,
