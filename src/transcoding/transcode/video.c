@@ -226,7 +226,7 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 
 #if ENABLE_HWACCELS
 #if ENABLE_VAAPI
-    if (tvh_context_get_int_opt(opts, "deinterlace_vaapi_rate", &field_rate)) {
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_rate", &field_rate)) {
         return -1;
     }
     field_rate = (field_rate < 1) ? 1 : field_rate;

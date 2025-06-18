@@ -462,9 +462,9 @@ tvh_codec_profile_vaapi_open(tvh_codec_profile_vaapi_t *self,
 {
     // deinterlace_vaapi advanced options
     self->deinterlace_vaapi_rate = self->deinterlace_vaapi_rate ? self->deinterlace_vaapi_rate : 1;
-    AV_DICT_SET_INT(opts, "deinterlace_vaapi_mode", self->deinterlace_vaapi_mode, AV_DICT_DONT_OVERWRITE);
-    AV_DICT_SET_INT(opts, "deinterlace_vaapi_rate", self->deinterlace_vaapi_rate, AV_DICT_DONT_OVERWRITE);
-    AV_DICT_SET_INT(opts, "deinterlace_vaapi_auto", self->deinterlace_vaapi_auto, AV_DICT_DONT_OVERWRITE);
+    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, AV_DICT_DONT_OVERWRITE);
+    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_rate", self->deinterlace_vaapi_rate, AV_DICT_DONT_OVERWRITE);
+    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_auto", self->deinterlace_vaapi_auto, AV_DICT_DONT_OVERWRITE);
 
     // pix_fmt
     AV_DICT_SET_PIX_FMT(opts, self->pix_fmt, AV_PIX_FMT_VAAPI);
