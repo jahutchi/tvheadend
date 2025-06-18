@@ -696,16 +696,24 @@ int
 vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter, size_t filter_len)
 {
     int mode = 0;
+    int rate = 1;
     int auto_enable = 0;
     TVHContext *ctx = avctx->opaque;
 
-    if (ctx->field_rate < 1 ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ||
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ||
+        tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_rate", &rate) ||
         tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_auto", &auto_enable)) {
         return -1;
     }
+    rate = (rate < 1) ? 1 : rate;
+    if (rate == 2) {
+      // Double output framerate when deinterlacing at field rate.
+      ctx->oavctx->framerate = av_mul_q(ctx->oavctx->framerate, (AVRational){ 2, 1 });
+      // Update ticks_per_frame for new framerate.
+      ctx->oavctx->ticks_per_frame = (90000 * ctx->oavctx->framerate.den) / ctx->oavctx->framerate.num;
+    }
     snprintf(filter, filter_len, "deinterlace_vaapi=mode=%d:rate=%d:auto=%d",
-                                 mode, ctx->field_rate, auto_enable);
+                                 mode, rate, auto_enable);
     return 0;
 }
 

@@ -216,7 +216,6 @@ static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
     AVRational ticks_per_frame;
-    int field_rate = 1;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
@@ -225,12 +224,6 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     }
 
 #if ENABLE_HWACCELS
-#if ENABLE_VAAPI
-    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_rate", &field_rate)) {
-        return -1;
-    }
-    field_rate = (field_rate < 1) ? 1 : field_rate;
-#endif // from ENABLE_VAAPI
 #if ENABLE_FFMPEG4_TRANSCODING
     // hwaccel is the user input for Hardware acceleration from Codec parameteres
     int hwaccel = -1;
@@ -262,14 +255,13 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     }
 #endif // from ENABLE_FFMPEG4_TRANSCODING
 #endif // from ENABLE_HWACCELS
-    self->field_rate = field_rate;
 
     // XXX: is this a safe assumption?
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
-    self->oavctx->framerate = av_mul_q(self->iavctx->framerate, (AVRational) { field_rate, 1 }); //take into account double rate i.e. field-based deinterlacers
-    self->oavctx->ticks_per_frame = (90000 * self->oavctx->framerate.den) / self->oavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
+    self->oavctx->framerate = self->iavctx->framerate;
+    self->oavctx->ticks_per_frame = (90000 * self->iavctx->framerate.den) / self->iavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
     ticks_per_frame = av_make_q(self->oavctx->ticks_per_frame, 1);
     self->oavctx->time_base = av_inv_q(av_mul_q(
         self->oavctx->framerate, ticks_per_frame));
