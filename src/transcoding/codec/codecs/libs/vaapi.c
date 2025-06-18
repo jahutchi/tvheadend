@@ -315,7 +315,7 @@ typedef struct {
  * VAAPI Deinterlace mode [deinterlace_vaapi mode parameter]
  * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
  * @note
- * int: 
+ * int:
  * 0 - Default (Use the highest-numbered (and therefore possibly most advanced) deinterlacing algorithm)
  * 1 - Use the bob deinterlacing algorithm
  * 2 - Use the weave deinterlacing algorithm
@@ -327,7 +327,7 @@ typedef struct {
  * VAAPI Deinterlace rate [deinterlace_vaapi rate parameter]
  * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
  * @note
- * int: 
+ * int:
  * 1 - Output at frame rate (one frame of output for each field-pair)
  * 2 - Output at field rate (one frame of output for each field)
  */
@@ -336,7 +336,7 @@ typedef struct {
  * VAAPI Deinterlace 'auto' setting [deinterlace_vaapi auto parameter]
  * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
  * @note
- * int: 
+ * int:
  * 0 - Disabled (deinterlace fields & frames)
  * 1 - Enabled (only deinterlace fields, passing frames through unchanged)
  */
