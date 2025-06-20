@@ -583,7 +583,7 @@ static const codec_profile_class_t codec_profile_vaapi_class = {
             {
                 .type     = PT_INT,
                 .id       = "deinterlace_vaapi_mode",
-                .name     = N_("Deinterlace mode"),
+                .name     = N_("VAAPI Deinterlace mode"),
                 .desc     = N_("Mode to use for VAAPI Deinterlacing. "
                                "'Default' selects the most advanced deinterlacer, i.e. the mode appearing last in this list. "
                                "Tip: MADI and MCDI usually yield the smoothest results, especially when used with field rate output."),
