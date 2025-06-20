@@ -36,12 +36,37 @@ _video_filters_hw_pix_fmt(enum AVPixelFormat pix_fmt)
     return 0;
 }
 
+static int
+_video_get_sw_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *deint, size_t deint_len)
+{
+    int rate = 0;
+    int auto_enable = 0;
+
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_rate", &rate) ||
+        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_auto", &auto_enable)) {
+        return -1;
+    }
+
+    rate = (rate == 1) ? 1 : 0; // yadif mode 0=frame, 1=field
+    if (rate == 1) {
+        // Double output framerate when deinterlacing at field rate.
+        avctx->framerate = av_mul_q(avctx->framerate, (AVRational){ 2, 1 });
+        // Update ticks_per_frame for new framerate.
+        avctx->ticks_per_frame = (90000 * avctx->framerate.den) / avctx->framerate.num;
+    }
+
+    if (str_snprintf(deint, deint_len, "yadif=mode=%d:deint=%d", rate, auto_enable)) {
+        return -1;
+    }
+
+    return 0;
+}
 
 static int
 _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters)
 {
     char download[48];
-    char deint[8];
+    char deint[64];
     char hw_deint[64];
     char scale[24];
     char hw_scale[64];
@@ -57,7 +82,7 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
     int filter_sharpness = 0;
 #endif
 
-    if (tvh_context_get_int_opt(opts, "tvh_filter_deint", &filter_deint)) {
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_filter_deinterlace", &filter_deint)) {
         return -1;
     }
 #if ENABLE_VAAPI
@@ -80,18 +105,21 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         // when hwaccel is enabled we have two options:
         if (ihw) {
             // hw deint
-            hwaccels_get_deint_filter(self->iavctx, opts, hw_deint, sizeof(hw_deint));
+            if (!self->hw_accel_ictx ||
+                hwaccels_get_deint_filter(self->iavctx, self->oavctx, opts, hw_deint, sizeof(hw_deint))) {
+                return -1;
+            }
         }
         else {
             // sw deint
-            if (str_snprintf(deint, sizeof(deint), "yadif")) {
+            if (_video_get_sw_deint_filter(self->oavctx, opts, deint, sizeof(deint))) {
                 return -1;
             }
         }
     }
 #else
     if (filter_deint) {
-        if (str_snprintf(deint, sizeof(deint), "yadif")) {
+        if (_video_get_sw_deint_filter(self->oavctx, opts, deint, sizeof(deint))) {
             return -1;
         }
     }

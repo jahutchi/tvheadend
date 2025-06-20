@@ -90,12 +90,6 @@
 #define VAAPI_DEINT_MODE_MADI           3
 #define VAAPI_DEINT_MODE_MCDI           4
 
-#define VAAPI_DEINT_RATE_FRAME          0
-#define VAAPI_DEINT_RATE_FIELD          1
-
-#define VAAPI_DEINT_AUTO_OFF            0
-#define VAAPI_DEINT_AUTO_ON             1
-
 #define UI_CODEC_AVAILABLE_OFFSET       0
 #define UI_MAX_B_FRAMES_OFFSET          1
 #define UI_MAX_QUALITY_OFFSET           4
@@ -155,26 +149,6 @@ deinterlace_vaapi_mode_get_list( void *o, const char *lang )
         { N_("Weave Deinterlacing"),                     VAAPI_DEINT_MODE_WEAVE },
         { N_("Motion Adaptive Deinterlacing (MADI)"),    VAAPI_DEINT_MODE_MADI },
         { N_("Motion Compensated Deinterlacing (MCDI)"), VAAPI_DEINT_MODE_MCDI },
-    };
-    return strtab2htsmsg(tab, 1, lang);
-}
-
-static htsmsg_t *
-deinterlace_vaapi_rate_get_list( void *o, const char *lang )
-{
-    static const struct strtab tab[] = {
-        { N_("Frame Rate"),                              VAAPI_DEINT_RATE_FRAME },
-        { N_("Field Rate"),                              VAAPI_DEINT_RATE_FIELD },
-    };
-    return strtab2htsmsg(tab, 1, lang);
-}
-
-static htsmsg_t *
-deinterlace_vaapi_auto_get_list( void *o, const char *lang )
-{
-    static const struct strtab tab[] = {
-        { N_("Disable"),                              VAAPI_DEINT_AUTO_OFF },
-        { N_("Enable"),                               VAAPI_DEINT_AUTO_ON },
     };
     return strtab2htsmsg(tab, 1, lang);
 }
@@ -323,24 +297,6 @@ typedef struct {
  * 4 - Use the motion compensated deinterlacing algorithm
  */
     int deinterlace_vaapi_mode;
-/**
- * VAAPI Deinterlace rate [deinterlace_vaapi rate parameter]
- * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
- * @note
- * int:
- * 0 - Output at frame rate (one frame of output for each field-pair)
- * 1 - Output at field rate (one frame of output for each field)
- */
-    int deinterlace_vaapi_rate;
-/**
- * VAAPI Deinterlace 'auto' setting [deinterlace_vaapi auto parameter]
- * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
- * @note
- * int:
- * 0 - Disabled (deinterlace fields & frames)
- * 1 - Enabled (only deinterlace fields, passing frames through unchanged)
- */
-    int deinterlace_vaapi_auto;
 
     int loop_filter_level;
     int loop_filter_sharpness;
@@ -461,9 +417,7 @@ tvh_codec_profile_vaapi_open(tvh_codec_profile_vaapi_t *self,
                              AVDictionary **opts)
 {
     // deinterlace_vaapi advanced options
-    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, AV_DICT_DONT_OVERWRITE);
-    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_rate", self->deinterlace_vaapi_rate, AV_DICT_DONT_OVERWRITE);
-    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_auto", self->deinterlace_vaapi_auto, AV_DICT_DONT_OVERWRITE);
+    AV_DICT_SET_INT(opts, "tvh_transcode_filter_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, AV_DICT_DONT_OVERWRITE);
 
     // pix_fmt
     AV_DICT_SET_PIX_FMT(opts, self->pix_fmt, AV_PIX_FMT_VAAPI);
@@ -638,33 +592,6 @@ static const codec_profile_class_t codec_profile_vaapi_class = {
                 .off      = offsetof(tvh_codec_profile_vaapi_t, deinterlace_vaapi_mode),
                 .list     = deinterlace_vaapi_mode_get_list,
                 .def.i    = VAAPI_DEINT_MODE_DEFAULT,
-            },
-            {
-                .type     = PT_INT,
-                .id       = "deinterlace_vaapi_rate",
-                .name     = N_("Deinterlace rate type"),
-                .desc     = N_("VAAPI deinterlacing rate type. Frame Rate combines the two interlaced fields to create a single progressive frame. "
-                               "Field Rate treats each field as a separate entity, each of which are analyzed individually before combining these to create the frame. "
-                               "Note: with field rate deinterlacing the resulting file will have double frame-rate (for example 25i becomes 50p), "
-                               "which can result in smoother video since the original temporal characteristics of the interlaced video are retained."),
-                .group    = 2,
-                .opts     = PO_ADVANCED,
-                .off      = offsetof(tvh_codec_profile_vaapi_t, deinterlace_vaapi_rate),
-                .list     = deinterlace_vaapi_rate_get_list,
-                .def.i    = VAAPI_DEINT_RATE_FRAME,
-            },
-            {
-                .type     = PT_INT,
-                .id       = "deinterlace_vaapi_auto",
-                .name     = N_("Deinterlace fields only"),
-                .desc     = N_("This is the deinterlace_vaapi 'auto' setting. "
-                               "Enable this option if you'd like to only deinterlace fields, passing frames through unchanged. "
-                               ),
-                .group    = 2,
-                .opts     = PO_EXPERT,
-                .off      = offsetof(tvh_codec_profile_vaapi_t, deinterlace_vaapi_auto),
-                .list     = deinterlace_vaapi_auto_get_list,
-                .def.i    = VAAPI_DEINT_AUTO_OFF,
             },
             {
                 .type     = PT_INT,

@@ -130,6 +130,12 @@
 #define HWACCEL_PRIORITIZE_MMAL  3
 #endif
 
+#define DEINT_RATE_FRAME         0
+#define DEINT_RATE_FIELD         1
+
+#define DEINT_AUTO_OFF           0
+#define DEINT_AUTO_ON            1
+
 /* codec_profile_class ====================================================== */
 
 uint32_t
@@ -291,6 +297,31 @@ extern const codec_profile_class_t codec_profile_video_class;
 typedef struct tvh_codec_profile_video {
     TVHCodecProfile;
     int deinterlace;
+
+    /**
+     * SW or HW deinterlace rate (applies to deinterlace filter)
+     * @note
+     * int:
+     * VALUE - deinterlace rate
+     *
+     * - 0 - Output at frame rate (one frame of output for each field-pair)
+     *
+     * - 1 - Output at field rate (one frame of output for each field)
+     */
+    int deinterlace_rate;
+
+    /**
+     * SW or HW deinterlace 'auto' mode (applies to deinterlace filter)
+     * @note
+     * int:
+     * VALUE - deinterlace auto
+     *
+     * - 0 - Disabled (deinterlace fields & frames)
+     *
+     * - 1 - Enabled (only deinterlace fields, passing frames through unchanged)
+     */
+    int deinterlace_auto;
+
     int height;
     int scaling_mode;   // 0 --> up&down; 1 --> up; 2 --> down
     int hwaccel;

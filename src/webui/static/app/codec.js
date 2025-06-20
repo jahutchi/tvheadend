@@ -49,9 +49,9 @@ function updateHWFilters(form) {
         form.findField('hw_denoise').setDisabled(!form.findField('hwaccel').getValue());
         form.findField('hw_sharpness').setDisabled(!form.findField('hwaccel').getValue());
         form.findField('hwaccel_details').setDisabled(!form.findField('hwaccel').getValue());
+        form.findField('deinterlace_rate').setDisabled(!form.findField('deinterlace').getValue());
+        form.findField('deinterlace_auto').setDisabled(!form.findField('deinterlace').getValue());
         form.findField('deinterlace_vaapi_mode').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
-        form.findField('deinterlace_vaapi_rate').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
-        form.findField('deinterlace_vaapi_auto').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
     }
 }
 
