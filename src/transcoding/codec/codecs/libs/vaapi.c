@@ -90,8 +90,8 @@
 #define VAAPI_DEINT_MODE_MADI           3
 #define VAAPI_DEINT_MODE_MCDI           4
 
-#define VAAPI_DEINT_RATE_FRAME          1
-#define VAAPI_DEINT_RATE_FIELD          2
+#define VAAPI_DEINT_RATE_FRAME          0
+#define VAAPI_DEINT_RATE_FIELD          1
 
 #define VAAPI_DEINT_AUTO_OFF            0
 #define VAAPI_DEINT_AUTO_ON             1
@@ -328,8 +328,8 @@ typedef struct {
  * https://ffmpeg.org/doxygen/6.1/vf__deinterlace__vaapi_8c.html
  * @note
  * int:
- * 1 - Output at frame rate (one frame of output for each field-pair)
- * 2 - Output at field rate (one frame of output for each field)
+ * 0 - Output at frame rate (one frame of output for each field-pair)
+ * 1 - Output at field rate (one frame of output for each field)
  */
     int deinterlace_vaapi_rate;
 /**
@@ -461,7 +461,6 @@ tvh_codec_profile_vaapi_open(tvh_codec_profile_vaapi_t *self,
                              AVDictionary **opts)
 {
     // deinterlace_vaapi advanced options
-    self->deinterlace_vaapi_rate = self->deinterlace_vaapi_rate ? self->deinterlace_vaapi_rate : 1;
     AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, AV_DICT_DONT_OVERWRITE);
     AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_rate", self->deinterlace_vaapi_rate, AV_DICT_DONT_OVERWRITE);
     AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_auto", self->deinterlace_vaapi_auto, AV_DICT_DONT_OVERWRITE);

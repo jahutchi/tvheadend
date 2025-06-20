@@ -52,7 +52,6 @@ function updateHWFilters(form) {
         form.findField('deinterlace_vaapi_mode').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
         form.findField('deinterlace_vaapi_rate').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
         form.findField('deinterlace_vaapi_auto').setDisabled(!form.findField('hwaccel').getValue() || !form.findField('deinterlace').getValue());
-        if (form.findField('deinterlace_vaapi_rate').getValue() < 1) { form.findField('deinterlace_vaapi_rate').setValue(1); }
     }
 }
 

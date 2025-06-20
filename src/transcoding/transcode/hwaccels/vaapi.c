@@ -696,7 +696,7 @@ int
 vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter, size_t filter_len)
 {
     int mode = 0;
-    int rate = 1;
+    int rate = 0;
     int auto_enable = 0;
     TVHContext *ctx = avctx->opaque;
 
@@ -705,7 +705,7 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
         tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_auto", &auto_enable)) {
         return -1;
     }
-    rate = (rate < 1) ? 1 : rate;
+    rate = (rate == 1) ? 2 : 1;  // Map user selected rate (0=frame,1=field) to VAAPI rate (1=frame,2=field)
     if (rate == 2) {
       // Double output framerate when deinterlacing at field rate.
       ctx->oavctx->framerate = av_mul_q(ctx->oavctx->framerate, (AVRational){ 2, 1 });
