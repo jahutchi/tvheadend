@@ -219,41 +219,6 @@ const codec_profile_class_t codec_profile_video_class = {
         .ic_caption    = N_("video"),
         .ic_properties = (const property_t[]) {
             {
-                .type     = PT_BOOL,
-                .id       = "deinterlace",
-                .name     = N_("Deinterlace"),
-                .desc     = N_("Deinterlace."),
-                .group    = 2,
-                .off      = offsetof(TVHVideoCodecProfile, deinterlace),
-                .set      = codec_profile_video_class_deinterlace_set,
-                .def.i    = 1,
-            },
-            {
-                .type     = PT_INT,
-                .id       = "deinterlace_rate",
-                .name     = N_("Deinterlace rate type"),
-                .desc     = N_("Deinterlacing rate type. Frame Rate combines the two interlaced fields to create a single progressive frame. "
-                               "Field Rate treats each field as a separate entity, each are analyzed individually before combining these to create the frame. "
-                               "Note: with field rate deinterlacing the resulting file will have double frame-rate (for example 25i becomes 50p), "
-                               "which can result in smoother video since the original temporal characteristics of the interlaced video are retained."),
-                .group    = 2,
-                .opts     = PO_ADVANCED,
-                .off      = offsetof(TVHVideoCodecProfile, deinterlace_rate),
-                .list     = deinterlace_rate_get_list,
-                .def.i    = DEINT_RATE_FRAME,
-            },
-            {
-                .type     = PT_INT,
-                .id       = "deinterlace_auto",
-                .name     = N_("Deinterlace fields only"),
-                .desc     = N_("Enable this option if you'd like to only deinterlace fields, passing frames through unchanged."),
-                .group    = 2,
-                .opts     = PO_EXPERT,
-                .off      = offsetof(TVHVideoCodecProfile, deinterlace_auto),
-                .list     = deinterlace_auto_get_list,
-                .def.i    = DEINT_AUTO_OFF,
-            },
-            {
                 .type     = PT_INT,
                 .id       = "height",
                 .name     = N_("Height (pixels) (0=no scaling)"),
@@ -292,6 +257,41 @@ const codec_profile_class_t codec_profile_video_class = {
                 .off      = offsetof(TVHVideoCodecProfile, hwaccel_details),
                 .list     = hwaccel_get_list,
                 .def.i    = 0,
+            },
+            {
+                .type     = PT_BOOL,
+                .id       = "deinterlace",
+                .name     = N_("Deinterlace"),
+                .desc     = N_("Deinterlace."),
+                .group    = 2,
+                .off      = offsetof(TVHVideoCodecProfile, deinterlace),
+                .set      = codec_profile_video_class_deinterlace_set,
+                .def.i    = 1,
+            },
+            {
+                .type     = PT_INT,
+                .id       = "deinterlace_rate",
+                .name     = N_("Deinterlace rate type"),
+                .desc     = N_("Deinterlacing rate type. Frame Rate combines the two interlaced fields to create a single progressive frame. "
+                               "Field Rate treats each field as a separate entity, each are analyzed individually before combining these to create the frame. "
+                               "Note: with field rate deinterlacing the resulting file will have double frame-rate (for example 25i becomes 50p), "
+                               "which can result in smoother video since the original temporal characteristics of the interlaced video are retained."),
+                .group    = 2,
+                .opts     = PO_ADVANCED,
+                .off      = offsetof(TVHVideoCodecProfile, deinterlace_rate),
+                .list     = deinterlace_rate_get_list,
+                .def.i    = DEINT_RATE_FRAME,
+            },
+            {
+                .type     = PT_INT,
+                .id       = "deinterlace_auto",
+                .name     = N_("Deinterlace fields only"),
+                .desc     = N_("Enable this option if you'd like to only deinterlace fields, passing frames through unchanged."),
+                .group    = 2,
+                .opts     = PO_EXPERT,
+                .off      = offsetof(TVHVideoCodecProfile, deinterlace_auto),
+                .list     = deinterlace_auto_get_list,
+                .def.i    = DEINT_AUTO_OFF,
             },
             {
                 .type     = PT_INT,
