@@ -429,8 +429,8 @@ tvh_video_context_ship(TVHContext *self, AVPacket *avpkt)
         }
 
         tvh_context_log(self, LOG_TRACE,
-            "  after rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
-            avpkt->pts, avpkt->dts, avpkt->duration);
+            "  after rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64", time_base={%d/%d}",
+            avpkt->pts, avpkt->dts, avpkt->duration, avpkt->time_base.num, avpkt->time_base.den);
     }
 
     return avpkt->size;
