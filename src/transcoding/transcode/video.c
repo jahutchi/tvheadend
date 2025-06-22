@@ -417,12 +417,20 @@ tvh_video_context_ship(TVHContext *self, AVPacket *avpkt)
             self->oavctx->time_base.num, self->oavctx->time_base.den);
 
         tvh_context_log(self, LOG_TRACE,
-            "  before rescale: pts=%" PRId64 ", dts=%" PRId64, avpkt->pts, avpkt->dts);
+            "  before rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
+            avpkt->pts, avpkt->dts, avpkt->duration);
 
         av_packet_rescale_ts(avpkt, self->oavfltctx->inputs[0]->time_base, self->oavctx->time_base);
 
+        if (!avpkt->duration && self->oavctx->framerate.num > 0 &&
+            self->oavctx->framerate.den > 0) {
+            avpkt->duration = av_rescale_q(1, av_inv_q(self->oavctx->framerate),
+                                              self->oavctx->time_base);
+        }
+
         tvh_context_log(self, LOG_TRACE,
-            "  after rescale: pts=%" PRId64 ", dts=%" PRId64, avpkt->pts, avpkt->dts);
+            "  after rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
+            avpkt->pts, avpkt->dts, avpkt->duration);
     }
 
     return avpkt->size;
