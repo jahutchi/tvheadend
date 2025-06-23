@@ -407,31 +407,9 @@ tvh_video_context_ship(TVHContext *self, AVPacket *avpkt)
         return -1;
     }
 
-    // If a filter was used (e.g. deinterlace) then rescale packet PTS/DTS to output time base
-    if (self && self->oavctx && self->oavfltctx && self->oavfltctx->inputs[0] &&
-        self->oavfltctx->inputs[0]->time_base.den) {
-
-        tvh_context_log(self, LOG_TRACE,
-            "Rescaling packet pts/dts from filter time base {%d/%d} to output time base {%d/%d}",
-            self->oavfltctx->inputs[0]->time_base.num, self->oavfltctx->inputs[0]->time_base.den,
-            self->oavctx->time_base.num, self->oavctx->time_base.den);
-
-        tvh_context_log(self, LOG_TRACE,
-            "  before rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
-            avpkt->pts, avpkt->dts, avpkt->duration);
-
-        av_packet_rescale_ts(avpkt, self->oavfltctx->inputs[0]->time_base, self->oavctx->time_base);
-
-        if (!avpkt->duration && self->oavctx->framerate.num > 0 &&
-            self->oavctx->framerate.den > 0) {
-            avpkt->duration = av_rescale_q(1, av_inv_q(self->oavctx->framerate),
-                                              self->oavctx->time_base);
-        }
-
-        tvh_context_log(self, LOG_TRACE,
-            "  after rescale: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64", time_base={%d/%d}",
-            avpkt->pts, avpkt->dts, avpkt->duration, avpkt->time_base.num, avpkt->time_base.den);
-    }
+    tvh_context_log(self, LOG_TRACE,
+        "Encoded packet for shipping: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64", time_base={%d/%d}",
+        avpkt->pts, avpkt->dts, avpkt->duration, avpkt->time_base.num, avpkt->time_base.den);
 
     return avpkt->size;
 }
