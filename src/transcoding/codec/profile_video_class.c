@@ -155,10 +155,10 @@ tvh_codec_profile_video_is_copy(TVHVideoCodecProfile *self, tvh_ssc_t *ssc)
 static int
 tvh_codec_profile_video_open(TVHVideoCodecProfile *self, AVDictionary **opts)
 {
-    AV_DICT_SET_INT(opts, "tvh_transcode_filter_deinterlace", self->deinterlace, 0);
+    AV_DICT_SET_INT(opts, "tvh_transcode_deinterlace", self->deinterlace, 0);
     if (self->deinterlace) {
-        AV_DICT_SET_INT(opts, "tvh_transcode_filter_deinterlace_rate", self->deinterlace_rate, 0);
-        AV_DICT_SET_INT(opts, "tvh_transcode_filter_deinterlace_auto", self->deinterlace_auto, 0);
+        AV_DICT_SET_INT(opts, "tvh_transcode_deinterlace_rate", self->deinterlace_rate, 0);
+        AV_DICT_SET_INT(opts, "tvh_transcode_deinterlace_auto", self->deinterlace_auto, 0);
     }
     // video_size
     AV_DICT_SET_INT(opts, "width", self->size.num, 0);

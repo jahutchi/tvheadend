@@ -699,9 +699,9 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
     int rate = 0;
     int auto_enable = 0;
 
-    if (tvh_context_get_int_opt(opts, "tvh_transcode_filter_vaapi_deinterlace_mode", &mode) ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_filter_deinterlace_rate", &rate) ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_filter_deinterlace_auto", &auto_enable)) {
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ||
+        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_rate", &rate) ||
+        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_auto", &auto_enable)) {
         return -1;
     }
 
