@@ -298,6 +298,12 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     self->oavctx->gop_size *= 3;
 
     self->oavctx->sample_aspect_ratio = self->iavctx->sample_aspect_ratio;
+
+    tvh_context_log(self, LOG_WARNING, "Encoder framerate after tvh_video_context_open_encoder: %d/%d (%.2f fps)",
+                    self->oavctx->framerate.num,
+                    self->oavctx->framerate.den,
+                    av_q2d(self->oavctx->framerate));
+
     return 0;
 }
 
