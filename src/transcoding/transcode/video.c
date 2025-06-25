@@ -124,6 +124,10 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         }
     }
 #endif
+    tvh_context_log(self, LOG_WARNING, "Encoder framerate after deint filter creations: %d/%d (%.2f fps)",
+                    self->oavctx->framerate.num,
+                    self->oavctx->framerate.den,
+                    av_q2d(self->oavctx->framerate));
 
     memset(scale, 0, sizeof(scale));
     memset(hw_scale, 0, sizeof(hw_scale));
