@@ -386,16 +386,16 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         avframe->pts, avframe->pkt_dts, *frame_duration);
 
     // If filter time_base differs from encoder time_base then rescale the frame accordingly
-    if (self->oavfltctx && self->oavfltctx->outputs &&
-        self->oavfltctx->outputs[0] &&
-        self->oavfltctx->outputs[0]->time_base.den &&
-        self->oavfltctx->outputs[0]->time_base.num &&
-        av_cmp_q(self->oavfltctx->outputs[0]->time_base, self->oavctx->time_base) != 0) {
+    if (self->oavfltctx && self->oavfltctx->inputs &&
+        self->oavfltctx->inputs[0] &&
+        self->oavfltctx->inputs[0]->time_base.den &&
+        self->oavfltctx->inputs[0]->time_base.num &&
+        av_cmp_q(self->oavfltctx->inputs[0]->time_base, self->oavctx->time_base) != 0) {
 
         // Rescale PTS from filter graph time_base to encoder time_base
         if (avframe->pts != AV_NOPTS_VALUE) {
             avframe->pts = av_rescale_q(avframe->pts,
-                                        self->oavfltctx->outputs[0]->time_base,
+                                        self->oavfltctx->inputs[0]->time_base,
                                         self->oavctx->time_base);
             // Deinterlace filters don't update DTS, so align DTS with PTS
             // to prevent duplicate or non-monotonic DTS values reaching the encoder.
@@ -405,7 +405,7 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         if (*frame_duration > 0) {
             // Rescale the known duration from filter output time_base -> encoder time_base
             *frame_duration = av_rescale_q(*frame_duration,
-                                           self->oavfltctx->outputs[0]->time_base,
+                                           self->oavfltctx->inputs[0]->time_base,
                                            self->oavctx->time_base);
         } else if (self->oavctx->framerate.num > 0 && self->oavctx->framerate.den > 0) {
             // If duration is blank then use encoder expected frame duration
@@ -415,7 +415,7 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 
         tvh_context_log(self, LOG_TRACE,
             "Rescaled frame {%d/%d}->{%d/%d}: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
-            self->oavfltctx->outputs[0]->time_base.num, self->oavfltctx->outputs[0]->time_base.den,
+            self->oavfltctx->inputs[0]->time_base.num, self->oavfltctx->inputs[0]->time_base.den,
             self->oavctx->time_base.num, self->oavctx->time_base.den,
             avframe->pts, avframe->pkt_dts, *frame_duration);
     }
