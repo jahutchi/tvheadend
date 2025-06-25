@@ -711,6 +711,12 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
         avctx->framerate = av_mul_q(avctx->framerate, (AVRational){ 2, 1 });
         // Update ticks_per_frame for new framerate.
         avctx->ticks_per_frame = (90000 * avctx->framerate.den) / avctx->framerate.num;
+        tvherror(LS_VAAPI, "Encoder framerate: %d/%d (%.2f fps)",
+                           avctx->framerate.num,
+                           avctx->framerate.den,
+                           av_q2d(avctx->framerate));
+    } else {
+        tvherror(LS_VAAPI, "Encoder framerate was not adjusted");
     }
 
     if (str_snprintf(filter, filter_len, "deinterlace_vaapi=mode=%d:rate=%d:auto=%d",
