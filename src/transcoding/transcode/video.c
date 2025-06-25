@@ -41,7 +41,7 @@ static int
 _video_get_sw_deint_filter(TVHContext *self, char *deint, size_t deint_len)
 {
     if (str_snprintf(deint, deint_len, "yadif=mode=%d:deint=%d",
-                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_enable_field_rate
+                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_field_rate
                      ((TVHVideoCodecProfile *)self->profile)->deinterlace_auto_enable )) {
         return -1;
     }
@@ -227,7 +227,7 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
     AVRational ticks_per_frame;
     int deinterlace  = ((TVHVideoCodecProfile *)self->profile)->deinterlace;
-    int field_rate = (deinterlace && ((TVHVideoCodecProfile *)self->profile)->deinterlace_enable_field_rate) ? 2 : 1;
+    int field_rate = (deinterlace && ((TVHVideoCodecProfile *)self->profile)->deinterlace_field_rate) ? 2 : 1;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
