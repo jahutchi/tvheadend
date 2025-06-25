@@ -388,6 +388,15 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
 
     if (self->iavfltctx && self->iavfltctx->nb_outputs > 0) {
         outlink = self->iavfltctx->outputs[0];
+        tvh_context_log(self, LOG_DEBUG, "found an outlink");
+        if (outlink && outlink->time_base.num > 0 && outlink->time_base.den) {
+            tvh_context_log(self, LOG_DEBUG, "Filter time_base: {%d/%d}, Encoder time_base: {%d/%d}, cmp=%d",
+                outlink->time_base.num, outlink->time_base.den,
+                self->oavctx->time_base.num, self->oavctx->time_base.den,
+                av_cmp_q(outlink->time_base, self->oavctx->time_base));
+        }
+    } else {
+        tvh_context_log(self, LOG_DEBUG, "didnt find an outlink");
     }
 
     // If we have a filter and its time base differs from the encoder then rescale the frame
