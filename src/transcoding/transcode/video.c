@@ -386,7 +386,8 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         avframe->pts, avframe->pkt_dts, *frame_duration);
 
     // If filter time_base differs from encoder time_base then rescale the frame accordingly
-    if (self->oavfltctx && self->oavfltctx->outputs[0] &&
+    if (self->oavfltctx && self->oavfltctx->outputs &&
+        self->oavfltctx->outputs[0] &&
         self->oavfltctx->outputs[0]->time_base.den &&
         self->oavfltctx->outputs[0]->time_base.num &&
         av_cmp_q(self->oavfltctx->outputs[0]->time_base, self->oavctx->time_base) != 0) {
