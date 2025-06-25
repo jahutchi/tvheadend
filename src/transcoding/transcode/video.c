@@ -375,6 +375,7 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         return -1;
     }
 
+    AVFilterLink *outlink = NULL;
 #if LIBAVUTIL_VERSION_MAJOR >= 58
     int64_t *frame_duration = &avframe->duration;
 #else
@@ -385,37 +386,38 @@ tvh_video_context_encode(TVHContext *self, AVFrame *avframe)
         "Decoded frame: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
         avframe->pts, avframe->pkt_dts, *frame_duration);
 
-    // If filter time_base differs from encoder time_base then rescale the frame accordingly
-    if (self->oavfltctx && self->oavfltctx->inputs &&
-        self->oavfltctx->inputs[0] &&
-        self->oavfltctx->inputs[0]->time_base.den &&
-        self->oavfltctx->inputs[0]->time_base.num &&
-        av_cmp_q(self->oavfltctx->inputs[0]->time_base, self->oavctx->time_base) != 0) {
+    if (self->iavfltctx && self->iavfltctx->nb_outputs > 0) {
+        outlink = self->iavfltctx->outputs[0];
+    }
+
+    // If we have a filter and its time base differs from the encoder then rescale the frame
+    if (outlink && outlink->time_base.num > 0 && outlink->time_base.den > 0 &&
+        av_cmp_q(outlink->time_base, self->oavctx->time_base) != 0) {
 
         // Rescale PTS from filter graph time_base to encoder time_base
         if (avframe->pts != AV_NOPTS_VALUE) {
             avframe->pts = av_rescale_q(avframe->pts,
-                                        self->oavfltctx->inputs[0]->time_base,
+                                        outlink->time_base,
                                         self->oavctx->time_base);
             // Deinterlace filters don't update DTS, so align DTS with PTS
-            // to prevent duplicate or non-monotonic DTS values reaching the encoder.
+            // This prevents duplicate or incorrect DTS values reaching the encoder
             avframe->pkt_dts = avframe->pts;
         }
 
         if (*frame_duration > 0) {
-            // Rescale the known duration from filter output time_base -> encoder time_base
+            // Rescale current frame duration from filter output time base -> encoder time base
             *frame_duration = av_rescale_q(*frame_duration,
-                                           self->oavfltctx->inputs[0]->time_base,
+                                           outlink->time_base,
                                            self->oavctx->time_base);
         } else if (self->oavctx->framerate.num > 0 && self->oavctx->framerate.den > 0) {
-            // If duration is blank then use encoder expected frame duration
+            // If duration is blank then fallback to expected duration based on encoder frame rate
             *frame_duration = av_rescale_q(1, av_inv_q(self->oavctx->framerate),
                                            self->oavctx->time_base);
         }
 
         tvh_context_log(self, LOG_TRACE,
             "Rescaled frame {%d/%d}->{%d/%d}: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
-            self->oavfltctx->inputs[0]->time_base.num, self->oavfltctx->inputs[0]->time_base.den,
+            outlink->time_base.num, outlink->time_base.den,
             self->oavctx->time_base.num, self->oavctx->time_base.den,
             avframe->pts, avframe->pkt_dts, *frame_duration);
     }
