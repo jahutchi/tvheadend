@@ -299,22 +299,22 @@ typedef struct tvh_codec_profile_video {
     int deinterlace;
 
     /**
-     * SW or HW deinterlace rate (applies to deinterlace filter)
+     * SW or HW deinterlace enable field rate (applies to deinterlace filters)
      * @note
      * int:
      * - 0 - Output at frame rate (one frame of output for each field-pair)
      * - 1 - Output at field rate (one frame of output for each field)
      */
-    int deinterlace_rate;
+    int deinterlace_field_rate;
 
     /**
-     * SW or HW deinterlace 'auto' mode (applies to deinterlace filter)
+     * SW or HW deinterlace 'auto' mode (applies to deinterlace filters)
      * @note
      * int:
      * - 0 - Disabled (deinterlace all content, including progressive frames)
      * - 1 - Enabled (only deinterlace interlaced fields; progressive frames are passed through unchanged)
      */
-    int deinterlace_auto;
+    int deinterlace_enable_auto;
 
     int height;
     int scaling_mode;   // 0 --> up&down; 1 --> up; 2 --> down

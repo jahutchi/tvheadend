@@ -695,22 +695,15 @@ vaapi_get_scale_filter(AVCodecContext *iavctx, AVCodecContext *oavctx,
 int
 vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter, size_t filter_len)
 {
+    const TVHContext *ctx = avctx->opaque;
+
+    // Map user selected rate (0=frame,1=field) to VAAPI rate (1=frame,2=field)
+    int rate = ((TVHVideoCodecProfile *)ctx->profile)->deinterlace_enable_field_rate ? 2 : 1;
+    int auto_enable = ((TVHVideoCodecProfile *)ctx->profile)->deinterlace_auto_enable;
     int mode = 0;
-    int rate = 0;
-    int auto_enable = 0;
 
-    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_rate", &rate) ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_auto", &auto_enable)) {
+    if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ) {
         return -1;
-    }
-
-    rate = (rate == 1) ? 2 : 1;  // Map user selected rate (0=frame,1=field) to VAAPI rate (1=frame,2=field)
-    if (rate == 2) {
-        // Double output framerate when deinterlacing at field rate.
-        avctx->framerate = av_mul_q(avctx->framerate, (AVRational){ 2, 1 });
-        // Update ticks_per_frame for new framerate.
-        avctx->ticks_per_frame = (90000 * avctx->framerate.den) / avctx->framerate.num;
     }
 
     if (str_snprintf(filter, filter_len, "deinterlace_vaapi=mode=%d:rate=%d:auto=%d",

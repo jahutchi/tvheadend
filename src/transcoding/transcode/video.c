@@ -38,28 +38,13 @@ _video_filters_hw_pix_fmt(enum AVPixelFormat pix_fmt)
 }
 
 static int
-_video_get_sw_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *deint, size_t deint_len)
+_video_get_sw_deint_filter(TVHContext *self, char *deint, size_t deint_len)
 {
-    int rate = 0;
-    int auto_enable = 0;
-
-    if (tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_rate", &rate) ||
-        tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace_auto", &auto_enable)) {
+    if (str_snprintf(deint, deint_len, "yadif=mode=%d:deint=%d",
+                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_enable_field_rate
+                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_auto_enable )) {
         return -1;
     }
-
-    rate = (rate == 1) ? 1 : 0; // yadif mode 0=frame, 1=field
-    if (rate == 1) {
-        // Double output framerate when deinterlacing at field rate.
-        avctx->framerate = av_mul_q(avctx->framerate, (AVRational){ 2, 1 });
-        // Update ticks_per_frame for new framerate.
-        avctx->ticks_per_frame = (90000 * avctx->framerate.den) / avctx->framerate.num;
-    }
-
-    if (str_snprintf(deint, deint_len, "yadif=mode=%d:deint=%d", rate, auto_enable)) {
-        return -1;
-    }
-
     return 0;
 }
 
@@ -77,15 +62,12 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
     int ihw = _video_filters_hw_pix_fmt(self->iavctx->pix_fmt);
     int ohw = _video_filters_hw_pix_fmt(self->oavctx->pix_fmt);
     int filter_scale = (self->iavctx->height != self->oavctx->height);
-    int filter_deint = 0, filter_download = 0, filter_upload = 0;
+    int filter_deint = ((TVHVideoCodecProfile *)self->profile)->deinterlace;
+    int filter_download = 0, filter_upload = 0;
 #if ENABLE_HWACCELS
     int filter_denoise = 0;
     int filter_sharpness = 0;
 #endif
-
-    if (tvh_context_get_int_opt(opts, "tvh_transcode_deinterlace", &filter_deint)) {
-        return -1;
-    }
 #if ENABLE_VAAPI
     filter_denoise = self->profile->filter_hw_denoise;
     filter_sharpness = self->profile->filter_hw_sharpness;
@@ -106,21 +88,20 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         // when hwaccel is enabled we have two options:
         if (ihw) {
             // hw deint
-            if (!self->hw_accel_ictx ||
-                hwaccels_get_deint_filter(self->iavctx, self->oavctx, opts, hw_deint, sizeof(hw_deint))) {
+            if (hwaccels_get_deint_filter(self->iavctx, opts, hw_deint, sizeof(hw_deint))) {
                 return -1;
             }
         }
         else {
             // sw deint
-            if (_video_get_sw_deint_filter(self->oavctx, opts, deint, sizeof(deint))) {
+            if (_video_get_sw_deint_filter(self, deint, sizeof(deint))) {
                 return -1;
             }
         }
     }
 #else
     if (filter_deint) {
-        if (_video_get_sw_deint_filter(self->oavctx, opts, deint, sizeof(deint))) {
+        if (_video_get_sw_deint_filter(self, deint, sizeof(deint))) {
             return -1;
         }
     }
@@ -245,11 +226,8 @@ static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
     AVRational ticks_per_frame;
-    int deint = ((TVHVideoCodecProfile *)self->profile)->deinterlace;
-    int field_rate = ((TVHVideoCodecProfile *)self->profile)->deinterlace_rate;
-    int deint_auto = ((TVHVideoCodecProfile *)self->profile)->deinterlace_auto;
-    tvh_context_log(self, LOG_DEBUG, "deinterlace: %d, deinterlace_rate: %d, deinterlace_auto: %d",
-                                     deint, field_rate, deint_auto);
+    int deinterlace  = ((TVHVideoCodecProfile *)self->profile)->deinterlace;
+    int field_rate = (deinterlace && ((TVHVideoCodecProfile *)self->profile)->deinterlace_enable_field_rate) ? 2 : 1;
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
@@ -294,8 +272,8 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     if (!self->iavctx->framerate.num) {
         self->iavctx->framerate = av_make_q(30, 1);
     }
-    self->oavctx->framerate = self->iavctx->framerate;
-    self->oavctx->ticks_per_frame = (90000 * self->iavctx->framerate.den) / self->iavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
+    self->oavctx->framerate = av_mul_q(self->iavctx->framerate, (AVRational) { field_rate, 1 }); //take into account double rate i.e. field-based deinterlacers
+    self->oavctx->ticks_per_frame = (90000 * self->oavctx->framerate.den) / self->oavctx->framerate.num; // We assume 90kHz as timebase which is mandatory for MPEG-TS
     ticks_per_frame = av_make_q(self->oavctx->ticks_per_frame, 1);
     self->oavctx->time_base = av_inv_q(av_mul_q(
         self->oavctx->framerate, ticks_per_frame));

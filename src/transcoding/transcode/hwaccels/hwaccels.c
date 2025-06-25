@@ -155,15 +155,19 @@ hwaccels_get_scale_filter(AVCodecContext *iavctx, AVCodecContext *oavctx,
 
 
 int
-hwaccels_get_deint_filter(AVCodecContext *iavctx, AVCodecContext *oavctx, AVDictionary **opts, char *filter, size_t filter_len)
+hwaccels_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter, size_t filter_len)
 {
-    switch (iavctx->pix_fmt) {
+    const TVHContext *ctx = avctx->opaque;
+
+    if (ctx->hw_accel_ictx) {
+        switch (avctx->pix_fmt) {
 #if ENABLE_VAAPI
-        case AV_PIX_FMT_VAAPI:
-            return vaapi_get_deint_filter(oavctx, opts, filter, filter_len);
+            case AV_PIX_FMT_VAAPI:
+                return vaapi_get_deint_filter(avctx, opts, filter, filter_len);
 #endif
-        default:
-            break;
+            default:
+                break;
+        }
     }
 
     return -1;
