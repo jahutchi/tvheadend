@@ -244,6 +244,11 @@ static int
 tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
 {
     AVRational ticks_per_frame;
+    int deint = ((TVHVideoCodecProfile *)self->profile)->deinterlace;
+    int field_rate = ((TVHVideoCodecProfile *)self->profile)->deinterlace_rate;
+    int deint_auto = ((TVHVideoCodecProfile *)self->profile)->deinterlace_auto;
+    tvh_context_log(self, LOG_DEBUG, "deinterlace: %d, deinterlace_rate: %d, deinterlace_auto: %d",
+                                     deint, field_rate, deint_auto);
 
     if (tvh_context_get_int_opt(opts, "pix_fmt", &self->oavctx->pix_fmt) ||
         tvh_context_get_int_opt(opts, "width", &self->oavctx->width) ||
