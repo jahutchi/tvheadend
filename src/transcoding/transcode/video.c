@@ -18,6 +18,7 @@
  */
 
 #include "internals.h"
+#include "../codec/internals.h"
 
 #if ENABLE_HWACCELS
 #include "hwaccels/hwaccels.h"
