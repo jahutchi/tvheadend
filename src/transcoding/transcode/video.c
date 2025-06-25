@@ -282,6 +282,20 @@ tvh_video_context_open_encoder(TVHContext *self, AVDictionary **opts)
     self->oavctx->gop_size *= 3;
 
     self->oavctx->sample_aspect_ratio = self->iavctx->sample_aspect_ratio;
+
+    tvh_context_log(self, LOG_DEBUG,
+        "Encoder config:\n"
+        "  framerate:              %d/%d (%.2f fps)\n"
+        "  time_base:              %d/%d (%.6f s)\n"
+        "  gop_size:               %d\n"
+        "  sample_aspect_ratio:    %d/%d (%.3f)",
+        self->oavctx->framerate.num, self->oavctx->framerate.den,
+        av_q2d(self->oavctx->framerate),
+        self->oavctx->time_base.num, self->oavctx->time_base.den,
+        av_q2d(self->oavctx->time_base), self->oavctx->gop_size,
+        self->oavctx->sample_aspect_ratio.num, self->oavctx->sample_aspect_ratio.den,
+        av_q2d(self->oavctx->sample_aspect_ratio));
+
     return 0;
 }
 
