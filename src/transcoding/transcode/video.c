@@ -42,7 +42,7 @@ _video_get_sw_deint_filter(TVHContext *self, char *deint, size_t deint_len)
 {
     if (str_snprintf(deint, deint_len, "yadif=mode=%d:deint=%d",
                      ((TVHVideoCodecProfile *)self->profile)->deinterlace_field_rate,
-                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_auto_enable )) {
+                     ((TVHVideoCodecProfile *)self->profile)->deinterlace_enable_auto )) {
         return -1;
     }
     return 0;

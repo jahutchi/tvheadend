@@ -699,7 +699,7 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
 
     // Map user selected rate (0=frame,1=field) to VAAPI rate (1=frame,2=field)
     int rate = (((TVHVideoCodecProfile *)ctx->profile)->deinterlace_field_rate == 1) ? 2 : 1;
-    int auto_enable = ((TVHVideoCodecProfile *)ctx->profile)->deinterlace_auto_enable;
+    int enable_auto = ((TVHVideoCodecProfile *)ctx->profile)->deinterlace_enable_auto;
     int mode = 0;
 
     if (tvh_context_get_int_opt(opts, "tvh_transcode_vaapi_deinterlace_mode", &mode) ) {
@@ -707,7 +707,7 @@ vaapi_get_deint_filter(AVCodecContext *avctx, AVDictionary **opts, char *filter,
     }
 
     if (str_snprintf(filter, filter_len, "deinterlace_vaapi=mode=%d:rate=%d:auto=%d",
-                                         mode, rate, auto_enable)) {
+                                         mode, rate, enable_auto)) {
         return -1;
     }
 
