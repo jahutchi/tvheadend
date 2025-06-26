@@ -457,8 +457,8 @@ tvh_video_context_ship(TVHContext *self, AVPacket *avpkt)
     }
 
     tvh_context_log(self, LOG_TRACE,
-        "Encoded packet for shipping: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64", time_base={%d/%d}",
-        avpkt->pts, avpkt->dts, avpkt->duration, avpkt->time_base.num, avpkt->time_base.den);
+        "Encoded packet for shipping: pts=%" PRId64 ", dts=%" PRId64 ", duration=%" PRId64,
+        avpkt->pts, avpkt->dts, avpkt->duration);
 
     return avpkt->size;
 }
