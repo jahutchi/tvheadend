@@ -327,9 +327,6 @@ static int
 tvh_codec_profile_vaapi_open(tvh_codec_profile_vaapi_t *self,
                              AVDictionary **opts)
 {
-    // deinterlace_vaapi mode
-    AV_DICT_SET_INT(opts, "tvh_transcode_vaapi_deinterlace_mode", self->deinterlace_vaapi_mode, 0);
-
     // pix_fmt
     AV_DICT_SET_PIX_FMT(opts, self->pix_fmt, AV_PIX_FMT_VAAPI);
     return 0;

@@ -88,7 +88,7 @@ _video_filters_get_filters(TVHContext *self, AVDictionary **opts, char **filters
         // when hwaccel is enabled we have two options:
         if (ihw) {
             // hw deint
-            if (hwaccels_get_deint_filter(self->iavctx, opts, hw_deint, sizeof(hw_deint))) {
+            if (hwaccels_get_deint_filter(self->iavctx, hw_deint, sizeof(hw_deint))) {
                 return -1;
             }
         }
