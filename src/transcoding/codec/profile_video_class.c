@@ -270,7 +270,7 @@ const codec_profile_class_t codec_profile_video_class = {
                 .desc     = N_("Frame rate combines the two interlaced fields to create a single frame. "
                                "Field rate processes each field independently, outputting as individual frames, "
                                "which enables higher temporal resolution by producing one frame per field. "
-                               "Note: with field rate deinterlacing the resulting output file will have double "
+                               "Note: with field rate deinterlacing the resulting stream will have double "
                                "frame-rate (for example 25i becomes 50p), which can result in smoother video "
                                "since the original temporal properties of the interlaced video are retained."),
                 .group    = 2,
