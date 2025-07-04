@@ -55,9 +55,7 @@ tvhva_context_destroy(TVHVAContext *self)
     tvhdebug(LS_VAAPI, "Destroying TVHVAContext %p", self);
 
     if (self->hw_device_ref) {
-        int refcount = self->hw_device_ref->buffer->refcount->count;
-        tvhdebug(LS_VAAPI, "hw_device_ref exists, refcount = %d", refcount);
-
+        tvhdebug(LS_VAAPI, "hw_device_ref pointer %p", self->hw_device_ref);
         av_buffer_unref(&self->hw_device_ref);
 
         tvhdebug(LS_VAAPI, "av_buffer_unref() called on hw_device_ref");
@@ -647,9 +645,7 @@ vaapi_decode_setup_context(AVCodecContext *avctx)
         self = NULL;
         return ret;
     } else {
-        int refcount = self->hw_device_ref->buffer->refcount->count;
-        tvhlog(LOG_INFO, LS_VAAPI, "Decode: Created hw_device_ref %p (refcount = %d) for device: %s",
-               self->hw_device_ref, refcount, ctx->hw_accel_device);
+        tvhdebug(LS_VAAPI, "hw_device_ref pointer %p", self->hw_device_ref);
     }
     // lifted from ffmpeg-6.1.1/doc/examples/vaapi_transcode.c line 95
     /* set hw_frames_ctx for decoder's AVCodecContext */
