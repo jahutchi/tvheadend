@@ -1,0 +1,15 @@
+diff --urN ../ffmpeg-7.1.1/libavcodec/hw_base_encode.c ./libavcodec/hw_base_encode.c
+--- ../ffmpeg-7.1.1/libavcodec/hw_base_encode.c
++++ ./libavcodec/hw_base_encode.c
+@@ -504,7 +504,7 @@ static int hw_base_encode_send_frame(AVCodecContext *avctx, FFHWBaseEncodeContex
+ 
+         // Fix timestamps if we hit end-of-stream before the initial decode
+         // delay has elapsed.
+-        if (ctx->input_order <= ctx->decode_delay)
++        if (ctx->input_order <= ctx->decode_delay && ctx->pic_end)
+             ctx->dts_pts_diff = ctx->pic_end->pts - ctx->first_pts;
+     }
+ 
+-- 
+2.50.0
+
