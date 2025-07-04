@@ -47,13 +47,25 @@ tvhva_done()
 static void
 tvhva_context_destroy(TVHVAContext *self)
 {
-    if (self) {
-        if (self->hw_device_ref) {
-            av_buffer_unref(&self->hw_device_ref);
-        }
-        free(self);
-        self = NULL;
+    if (!self) {
+        tvhdebug(LS_VAAPI, "tvhva_context_destroy called with NULL context");
+        return;
     }
+
+    tvhdebug(LS_VAAPI, "Destroying TVHVAContext %p", self);
+
+    if (self->hw_device_ref) {
+        int refcount = self->hw_device_ref->buffer->refcount->count;
+        tvhdebug(LS_VAAPI, "hw_device_ref exists, refcount = %d", refcount);
+
+        av_buffer_unref(&self->hw_device_ref);
+
+        tvhdebug(LS_VAAPI, "av_buffer_unref() called on hw_device_ref");
+    } else {
+        tvhdebug(LS_VAAPI, "hw_device_ref was already NULL");
+    }
+
+    free(self);
 }
 #else
 typedef struct tvh_vaapi_device {
@@ -634,6 +646,10 @@ vaapi_decode_setup_context(AVCodecContext *avctx)
         free(self);
         self = NULL;
         return ret;
+    } else {
+        int refcount = self->hw_device_ref->buffer->refcount->count;
+        tvhlog(LOG_INFO, LS_VAAPI, "Decode: Created hw_device_ref %p (refcount = %d) for device: %s",
+               self->hw_device_ref, refcount, ctx->hw_accel_device);
     }
     // lifted from ffmpeg-6.1.1/doc/examples/vaapi_transcode.c line 95
     /* set hw_frames_ctx for decoder's AVCodecContext */
@@ -672,8 +688,11 @@ vaapi_decode_close_context(AVCodecContext *avctx)
 {
     TVHContext *ctx = avctx->opaque;
 
+    tvhdebug(LS_VAAPI, "vaapi_decode_close_context called for AVCodecContext %p, hw_accel_ictx=%p", avctx, ctx->hw_accel_ictx);
+
 #if ENABLE_FFMPEG4_TRANSCODING
     if (avctx->hw_device_ctx) {
+        tvhdebug(LS_VAAPI, "Unreferencing hw_device_ctx %p", avctx->hw_device_ctx);
         av_buffer_unref(&avctx->hw_device_ctx);
     }
 #endif

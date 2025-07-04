@@ -118,6 +118,8 @@ hwaccels_decode_close_context(AVCodecContext *avctx)
 {
     TVHContext *ctx = avctx->opaque;
 
+    tvhdebug(LS_VAAPI, "hwaccels_decode_close_context called for TVHContext %p, hw_accel_ictx=%p", ctx, ctx->hw_accel_ictx);
+
     if (ctx->hw_accel_ictx) {
         switch (avctx->pix_fmt) {
 #if ENABLE_VAAPI
@@ -129,6 +131,7 @@ hwaccels_decode_close_context(AVCodecContext *avctx)
                 break;
         }
         ctx->hw_accel_ictx = NULL;
+        tvhdebug(LS_VAAPI, "hw_accel_ictx pointer cleared");
     }
 }
 
