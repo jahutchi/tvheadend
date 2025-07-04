@@ -484,6 +484,8 @@ tvh_context_flush(TVHContext *self)
 {
     tvh_context_decode_packet(self, NULL);
     tvh_context_encode_frame(self, NULL);
+    avcodec_flush_buffers(self->iavctx);
+    avcodec_flush_buffers(self->oavctx);
 }
 
 
