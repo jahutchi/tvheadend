@@ -203,7 +203,7 @@ ifeq (yes,$(CONFIG_LIBX264))
 
 EXTLIBS  += libx264
 ENCODERS += libx264
-FFMPEG_DIFFS += ffmpeg.libx264.diff ffmpeg-vaapi-mpeg2-skip-end-frame-for-second-field.patch ffmpeg71-fix-leaking-recon-surfaces-with-vaapi.patch
+FFMPEG_DIFFS += ffmpeg.libx264.diff ffmpeg-vaapi-mpeg2-skip-end-frame-for-second-field.patch ffmpeg71-hwbase-fix-null-dereference.patch ffmpeg71-fix-leaking-recon-surfaces-with-vaapi.patch
 
 endif
 
