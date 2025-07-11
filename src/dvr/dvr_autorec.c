@@ -217,6 +217,11 @@ dvr_autorec_cmp(dvr_autorec_entry_t *dae, epg_broadcast_t *e)
     return 0; // Avoid super wildcard match
 
   if(dae->dae_serieslink_uri) {
+    if (!e->serieslink)
+        tvhinfo(LS_DVR, "epg_broadcast object does not have a serieslink");
+    else
+        tvhinfo(LS_DVR, "dae->dae_serieslink_uri=%s : e->serieslink->uri=%s", dae->dae_serieslink_uri, e->serieslink->uri);
+
     if (!e->serieslink ||
         strcmp(dae->dae_serieslink_uri ?: "", e->serieslink->uri)) return 0;
   }

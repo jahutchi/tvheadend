@@ -2670,6 +2670,8 @@ dosave:
      * it.
      */
     if (dvr_autorec_entry_can_be_purged(de)) {
+        tvhinfo(LS_DVR, "\"%s\" on \"%s\": was updated and no longer matches autorec entry, so purging",
+              lang_str_get(de->de_title, NULL), DVR_CH_NAME(de));
         dvr_entry_assign_broadcast(de, NULL);
         dvr_entry_destroy(de, 1);
         de = NULL;
@@ -2791,6 +2793,7 @@ void dvr_event_updated(epg_broadcast_t *e)
   LIST_FOREACH(de, &e->dvr_entries, de_bcast_link) {
     assert(de->de_bcast == e);
     if (de->de_sched_state != DVR_SCHEDULED) continue;
+    tvhtrace(LS_DVR, "_dvr_entry_update triggered from de_bcast_link", epg_broadcast_get_title(e, NULL));
     _dvr_entry_update(de, -1, NULL, e, NULL, NULL, NULL, NULL, NULL,
                       NULL, 0, 0, 0, 0, DVR_PRIO_NOTSET, 0, 0, -1, -1, 0, NULL, NULL);
   }
