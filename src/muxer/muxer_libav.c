@@ -167,6 +167,18 @@ lav_muxer_add_stream(lav_muxer_t *lm,
     avcodec_parameters_from_context(st->codecpar, c);
     av_dict_set(&st->metadata, "language", ssc->es_lang, 0);
 
+    /* Correct codec_id if still unset so ffmpeg muxer doesn't fall
+     * without this, audio is sent as a private_stream (0x06). Which is not recognised by several players */
+    if (st->codecpar && st->codecpar->codec_id == AV_CODEC_ID_NONE) {
+      st->codecpar->codec_id = streaming_component_type2codec_id(ssc->es_type);
+      if (st->codecpar->codec_id == AV_CODEC_ID_NONE) {
+        tvhwarn(LS_LIBAV, "Unknown audio type id: %d, so this stream will be sent as private data", ssc->es_type);
+      } else {
+        tvhdebug(LS_LIBAV, "Using fallback audio codec detection: selected codec %d for stream type id %d",
+                            st->codecpar->codec_id, ssc->es_type);
+      }
+    }
+
   } else if(SCT_ISVIDEO(ssc->es_type)) {
     c->codec_type = AVMEDIA_TYPE_VIDEO;
     c->width      = ssc->es_width;
