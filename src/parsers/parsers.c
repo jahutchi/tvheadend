@@ -805,11 +805,17 @@ parse_mpa123(parser_t *t, parser_es_t *st)
 
     duration = 90000 * 1152 / sr;
     channels = ((h >> 6) & 3) == 3 ? 1 : 2;
+
+    /* pick DTS, prefer monotonic nextdts when both exist */
     dts = st->es_curdts;
-    if (dts == PTS_UNSET) {
-      dts = st->es_nextdts;
-      if(dts == PTS_UNSET) continue;
+    if (st->es_nextdts != PTS_UNSET) {
+      if (dts == PTS_UNSET)
+        dts = st->es_nextdts;
+      else if (st->es_nextdts > dts)
+        dts = st->es_nextdts;  /* avoid reusing an older/equal DTS */
     }
+    if (dts == PTS_UNSET)
+      continue;
 
     if (len < i + fsize + 4) {
       if (len - i == fsize && fsize == fsize2)
