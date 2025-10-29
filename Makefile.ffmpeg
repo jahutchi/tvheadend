@@ -203,7 +203,7 @@ ifeq (yes,$(CONFIG_LIBX264))
 
 EXTLIBS  += libx264
 ENCODERS += libx264
-FFMPEG_DIFFS += 
+FFMPEG_DIFFS += ffmpeg34-mathops-clip-constants.patch
 
 endif
 
